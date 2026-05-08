@@ -1,21 +1,28 @@
-import WebApp from '@twa-dev/sdk';
+'use client';
+
 import { useEffect, useState } from 'react';
+import type { WebApp as WebAppType } from '@twa-dev/types';
 
 export function useTelegram() {
-    const [webApp, setWebApp] = useState<typeof WebApp | null>(null);
+  const [webApp, setWebApp] = useState<WebAppType | null>(null);
 
-    useEffect(() => {
-        // Ensure this only runs on the client side
-        if (typeof window !== 'undefined' && WebApp) {
-            WebApp.ready(); // Tells Telegram the app is fully loaded
-            WebApp.expand(); // Expands the Mini App to full height
-            setWebApp(WebApp);
-        }
-    }, []);
-
-    return {
-        webApp,
-        user: webApp?.initDataUnsafe?.user,
-        initData: webApp?.initData,
+  useEffect(() => {
+    // Dynamically import the SDK only on the client side
+    const initTelegram = async () => {
+      const WebApp = (await import('@twa-dev/sdk')).default;
+      WebApp.ready();
+      WebApp.expand();
+      setWebApp(WebApp);
     };
+
+    if (typeof window !== 'undefined') {
+      initTelegram();
+    }
+  }, []);
+
+  return {
+    webApp,
+    user: webApp?.initDataUnsafe?.user,
+    initData: webApp?.initData,
+  };
 }

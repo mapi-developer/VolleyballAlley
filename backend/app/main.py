@@ -1,26 +1,36 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import asyncio
+
+from aiogram import Bot, Dispatcher
+from app.core.config import settings
+# Make sure you have created backend/app/bot/handlers.py
+from app.bot.handlers import router as bot_router 
+
+# Initialize Bot and Dispatcher
+bot = Bot(token=settings.bot_token)
+dp = Dispatcher()
+dp.include_router(bot_router)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup logic: e.g., Initialize aiogram bot webhook or polling here later
     print("Starting up Sports TMA Backend...")
+    # This starts the bot listening for messages
+    polling_task = asyncio.create_task(dp.start_polling(bot))
     yield
-    # Shutdown logic: Close database connections, stop bot
     print("Shutting down...")
+    polling_task.cancel()
+    await bot.session.close()
 
 app = FastAPI(
     title="Sports Event TMA API",
-    description="Backend for Telegram Mini App Sports Management",
-    version="1.0.0",
     lifespan=lifespan
 )
 
-# Configure CORS for the frontend Mini App
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Update this to your frontend URL in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,4 +38,4 @@ app.add_middleware(
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "message": "Sports TMA API is running."}
+    return {"status": "healthy"}
