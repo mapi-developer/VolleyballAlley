@@ -5,8 +5,7 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 from app.core.config import settings
-# Make sure you have created backend/app/bot/handlers.py
-from app.bot.handlers import router as bot_router 
+from app.bot.handlers import router as bot_router # Ensure this file exists!
 
 # Initialize Bot and Dispatcher
 bot = Bot(token=settings.bot_token)
@@ -16,7 +15,7 @@ dp.include_router(bot_router)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting up Sports TMA Backend...")
-    # This starts the bot listening for messages
+    # Start bot polling in a background task
     polling_task = asyncio.create_task(dp.start_polling(bot))
     yield
     print("Shutting down...")

@@ -10,8 +10,7 @@ WEB_APP_URL = "https://smelting-helpline-botanist.ngrok-free.dev"
 
 @router.message(Command("events"))
 async def cmd_events(message: types.Message):
-    # We define the button explicitly as an InlineKeyboardButton
-    # This is the ONLY way to open a Mini App from a Group Chat
+    # Use InlineKeyboardMarkup to avoid BUTTON_TYPE_INVALID
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -23,10 +22,7 @@ async def cmd_events(message: types.Message):
         ]
     )
     
-    try:
-        await message.answer(
-            "Ready to play? Click below to manage events!",
-            reply_markup=markup
-        )
-    except Exception as e:
-        print(f"Failed to send message: {e}")
+    await message.answer(
+        "Ready to play? Click below to manage events!",
+        reply_markup=markup
+    )
