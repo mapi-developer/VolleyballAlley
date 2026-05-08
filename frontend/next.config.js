@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Any config options can go here in the future
+  // This allows the Next.js dev server to accept connections from ngrok
+  experimental: {
+    allowedDevOrigins: ['smelting-helpline-botanist.ngrok-free.dev'],
+  },
 };
 
 module.exports = nextConfig;

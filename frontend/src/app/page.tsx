@@ -1,11 +1,28 @@
 'use client';
 
 import { useTelegram } from '@/hooks/useTelegram';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
-  const { user, webApp } = useTelegram();
+  const { user, webApp, initData } = useTelegram();
+  const [isRegistered, setIsRegistered] = useState(false);
 
-  // If webApp is null, we are either on the server or the client is still loading
+  useEffect(() => {
+    // When initData is available, check-in with the backend [cite: 186]
+    if (initData) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, { 
+        method: 'GET',
+        headers: {
+          'x-telegram-init-data': initData 
+        }
+      })
+      .then(res => {
+        if (res.ok) setIsRegistered(true);
+      })
+      .catch(err => console.error("Registration check failed", err));
+    }
+  }, [initData]);
+
   if (!webApp) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -30,7 +47,9 @@ export default function Home() {
             </div>
             <div>
               <h2 className="font-semibold text-lg">Welcome, {user.first_name}!</h2>
-              <p className="text-sm text-gray-500">Ready to play?</p>
+              <p className="text-sm text-gray-500">
+                {isRegistered ? "You are connected." : "Connecting to server..."}
+              </p>
             </div>
           </div>
         ) : (
