@@ -6,7 +6,7 @@ import { Clock, Users, MapPin, CreditCard } from 'lucide-react';
 export interface Game {
   id: string;
   type: 'Indoor' | 'Outdoor';
-  level: 'Advanced' | 'Beginner' | 'All';
+  level: 'All' | 'Advanced' | 'Beginner' | 'Intermediate';
   title: string;
   description: string;
   rawDate: string;
