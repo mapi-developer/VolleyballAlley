@@ -35,11 +35,8 @@ def health_check():
         "message": "VolleyballAlley API is running!"
     }
 
-from app.api.routes import users
-app.include_router(users.router, prefix="/api/users", tags=["Users"])
+from app.api.routes import users, events, rsvps
 
-# We will include our API routers here in the next step!
-# from app.api.routes import users, events, rsvps
-# app.include_router(users.router, prefix="/api/users", tags=["Users"])
-# app.include_router(events.router, prefix="/api/events", tags=["Events"])
-# app.include_router(rsvps.router, prefix="/api/rsvps", tags=["RSVPs"])
+app.include_router(users.router, prefix="/api/users", tags=["Users"])
+app.include_router(events.router, prefix="/api/events", tags=["Events"])
+app.include_router(rsvps.router, prefix="/api/rsvps", tags=["RSVPs"])
