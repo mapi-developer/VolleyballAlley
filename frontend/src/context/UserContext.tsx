@@ -10,6 +10,9 @@ interface UserContextType {
   level: string;
   role: UserRole;
   setRole: (role: UserRole) => void;
+  // ADDED THESE TO INTERFACE
+  footerVisible: boolean;
+  setFooterVisible: (visible: boolean) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -23,8 +26,9 @@ export const UserProvider = ({
   initialRole: UserRole,
   initialUser: any 
 }) => {
-  const [user, setUser] = useState<any>(initialUser); // Initialize with cookie data
+  const [user, setUser] = useState<any>(initialUser);
   const [role, setRoleState] = useState<UserRole>(initialRole);
+  const [footerVisible, setFooterVisible] = useState(true);
   
   const [rating] = useState(4.8);
   const [level] = useState("Intermediate+");
@@ -35,7 +39,6 @@ export const UserProvider = ({
       const telegramUser = tg.initDataUnsafe.user;
       setUser(telegramUser);
       
-      // Save basic user info to cookie for zero-flicker header
       const cookieData = {
         first_name: telegramUser.first_name,
         photo_url: telegramUser.photo_url
@@ -50,7 +53,10 @@ export const UserProvider = ({
   };
 
   return (
-    <UserContext.Provider value={{ user, rating, level, role, setRole }}>
+    <UserContext.Provider value={{ 
+      user, rating, level, role, setRole, 
+      footerVisible, setFooterVisible 
+    }}>
       {children}
     </UserContext.Provider>
   );
