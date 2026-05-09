@@ -1,35 +1,137 @@
 "use client";
-import { useEffect, useState } from "react";
 
-export default function Home() {
-  const [telegramId, setTelegramId] = useState<string>("Loading...");
+import { useUser } from "@/context/UserContext";
+import { 
+  Star, 
+  ShieldCheck, 
+  Copy, 
+  Check, 
+  Bell, 
+  Settings, 
+  Info, 
+  ChevronRight 
+} from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
 
-  useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user) {
-      setTelegramId(tg.initDataUnsafe.user.id.toString());
-    } else {
-      setTelegramId("Not found (Open in Telegram)");
+export default function ProfilePage() {
+  const { user, rating, level } = useUser();
+  const [copied, setCopied] = useState(false);
+  
+  const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : 'V';
+
+  const handleCopyTag = () => {
+    if (user?.username) {
+      navigator.clipboard.writeText(`@${user.username}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
-  }, []);
+  };
+
+  // Define the menu items based on your specs
+  const menuItems = [
+    { 
+      label: 'Notification Settings', 
+      icon: Bell, 
+      href: '/profile/notifications',
+      color: 'text-blue-500' 
+    },
+    { 
+      label: 'App Preferences', 
+      icon: Settings, 
+      href: '/profile/preferences',
+      color: 'text-gray-500' 
+    },
+    { 
+      label: 'Credentials & About', 
+      icon: Info, 
+      href: '/profile/about',
+      color: 'text-emerald-500' 
+    },
+  ];
 
   return (
-    <div className="p-6 flex flex-col items-center">
-      <div className="w-full max-w-sm bg-white p-6 rounded-3xl shadow-md border border-gray-100 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full mb-4">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-          </svg>
+    <div className="py-3 space-y-6">
+      {/* Identity Card (Kept from previous step) */}
+      <div className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col justify-center">
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight leading-tight">
+              {user?.first_name || "Guest"} {user?.last_name || ""}
+            </h2>
+            {user?.username && (
+              <button 
+                onClick={handleCopyTag}
+                className="flex items-center gap-1.5 text-blue-600 font-semibold text-sm mt-1 bg-blue-50/50 px-2.5 py-1 rounded-lg w-fit transition-all active:scale-95"
+              >
+                @{user.username}
+                {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} className="opacity-60" />}
+              </button>
+            )}
+          </div>
+
+          <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center overflow-hidden border-4 border-zinc-50 shadow-inner shrink-0">
+            {user?.photo_url ? (
+              <img src={user.photo_url} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-blue-600 font-bold text-3xl">{initial}</span>
+            )}
+          </div>
         </div>
-        
-        <h2 className="text-lg font-bold text-gray-900 mb-1">SDK Verified</h2>
-        <p className="text-sm text-gray-500 mb-6">Your Telegram Identity has been captured.</p>
-        
-        <div className="bg-zinc-50 rounded-2xl p-4 border border-gray-100">
-          <p className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-1">My Telegram ID</p>
-          <code className="text-xl font-mono text-blue-600 tracking-tighter">
-            {telegramId}
-          </code>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-zinc-50 rounded-2xl p-4 border border-gray-100/50">
+            <div className="flex items-center text-blue-600 mb-1">
+              <ShieldCheck size={16} className="mr-1.5" />
+              <span className="text-[10px] uppercase tracking-[0.1em] font-black opacity-50">Level</span>
+            </div>
+            <p className="text-gray-900 font-bold text-base">{level}</p>
+          </div>
+
+          <div className="bg-zinc-50 rounded-2xl p-4 border border-gray-100/50">
+            <div className="flex items-center text-amber-500 mb-1">
+              <Star size={16} className="mr-1.5 fill-amber-500" />
+              <span className="text-[10px] uppercase tracking-[0.1em] font-black opacity-50">Behavior</span>
+            </div>
+            <p className="text-gray-900 font-bold text-base">{rating} / 5.0</p>
+          </div>
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-[11px] text-gray-400 font-medium leading-relaxed mx-auto">
+            Rating is updated automatically based on attendance.
+          </p>
+        </div>
+      </div>
+
+      {/* NEW: Interactive Navigation List */}
+      <div className="bg-white rounded-[32px] overflow-hidden border border-gray-100 shadow-sm">
+        {/* Section Header */}
+        <div className="px-6 py-4 border-b border-gray-50 bg-zinc-50/50">
+          <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+            Account Preferences
+          </span>
+        </div>
+
+        {/* List Items */}
+        <div className="divide-y divide-gray-50">
+          {menuItems.map((item) => (
+            <Link 
+              key={item.label} 
+              href={item.href}
+              className="flex items-center gap-4 px-6 py-5 transition-all active:bg-zinc-50 hover:bg-zinc-50/50 group"
+            >
+              <div className={`p-2 rounded-xl bg-zinc-50 group-active:bg-white transition-colors`}>
+                <item.icon size={20} className={item.color} />
+              </div>
+              
+              <span className="flex-1 text-[15px] font-semibold text-gray-700">
+                {item.label}
+              </span>
+
+              <ChevronRight size={18} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+            </Link>
+          ))}
         </div>
       </div>
     </div>
