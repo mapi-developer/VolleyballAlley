@@ -1,69 +1,39 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-    Search, Info, Calendar, MapPin,
+    Search, Info, Calendar, MapPin, Loader2,
     Users, Banknote, Clock, ExternalLink, Map as MapIcon
 } from 'lucide-react';
 import GameCard, { Game } from '@/components/GameCard';
 import BottomSheet from '@/components/BottomSheet';
 import { useUser } from '@/context/UserContext';
-
-// Mock Data
-const MOCK_GAMES: Game[] = [
-    {
-        id: "1",
-        type: "Indoor",
-        level: "Advanced",
-        title: "Saturday Morning Smash",
-        description: "High-intensity competitive match. Please bring indoor court shoes.",
-        rawDate: "2026-10-24T10:00:00",
-        date: "Sat, Oct 24",
-        time: "10:00 AM - 12:00 PM",
-        currentPlayers: 10,
-        maxPlayers: 12,
-        hostName: "Alex",
-        hostRole: "Organizer",
-        price: "€8.00",
-        location: "Beach Arena Court 4",
-        revolutTag: "alexvolleyball",
-        isJoined: false
-    },
-    {
-        id: "2",
-        type: "Outdoor",
-        level: "Beginner",
-        title: "Sunset Beach Volley",
-        description: "Casual games on the sand. Perfect for beginners or anyone wanting a relaxed game.",
-        rawDate: "2026-10-25T16:00:00",
-        date: "Sun, Oct 25",
-        time: "4:00 PM - 7:00 PM",
-        currentPlayers: 12,
-        maxPlayers: 12,
-        hostName: "Matvei",
-        hostRole: "Organizer",
-        price: "Free",
-        location: "Margaret Island Sand",
-        isJoined: true
-    }
-];
+import { fetchWithAuth } from '@/lib/api';
 
 const FILTERS = ["All", "Indoor", "Outdoor", "Advanced", "Beginner"];
 
 export default function BrowsePage() {
+    const [games, setGames] = useState<Game[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const { setFooterVisible } = useUser();
     const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState("All");
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
+    useEffect(() => {
+        fetchWithAuth('/users/me')
+            .then(data => console.log("Profile data:", data))
+            .catch(err => console.error(err));
+    }, []);
+
     const filteredGames = useMemo(() => {
-        return MOCK_GAMES.filter(game => {
+        return games.filter(game => {
             const matchesFilter = activeFilter === "All" || game.type === activeFilter || game.level === activeFilter;
             const query = searchQuery.toLowerCase();
             const matchesSearch = game.title.toLowerCase().includes(query) || game.hostName.toLowerCase().includes(query) || game.location.toLowerCase().includes(query);
             return matchesFilter && matchesSearch;
         });
-    }, [searchQuery, activeFilter]);
+    }, [searchQuery, activeFilter, games]);
 
     // FIXED: Corrected template literal syntax
     const handleMapClick = (location: string) => {
@@ -104,11 +74,10 @@ export default function BrowsePage() {
                     <button
                         key={filter}
                         onClick={() => setActiveFilter(filter)}
-                        className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-semibold transition-all ${
-                            activeFilter === filter 
-                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                        className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-semibold transition-all ${activeFilter === filter
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
                                 : 'bg-white text-gray-600 border border-gray-200'
-                        }`}
+                            }`}
                     >
                         {filter}
                     </button>
@@ -117,7 +86,11 @@ export default function BrowsePage() {
 
             {/* List */}
             <div className="space-y-4 pb-6">
-                {filteredGames.length > 0 ? (
+                {isLoading ? (
+                    <div className="flex justify-center p-10 text-blue-500">
+                        <Loader2 className="animate-spin" size={32} />
+                    </div>
+                ) : filteredGames.length > 0 ? (
                     filteredGames.map((game) => (
                         <GameCard
                             key={game.id}
@@ -130,14 +103,8 @@ export default function BrowsePage() {
                         />
                     ))
                 ) : (
-                    <div className="bg-white rounded-[32px] p-12 border border-dashed border-gray-200 text-center">
-                        <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Info className="text-gray-300" size={32} />
-                        </div>
-                        <h3 className="text-gray-900 font-bold mb-1">No matches found</h3>
-                        <p className="text-gray-400 text-xs leading-relaxed max-w-[200px] mx-auto font-medium">
-                            Try adjusting your search or filters to find more events.
-                        </p>
+                    <div className="bg-white rounded-[32px] p-12 text-center border border-dashed border-gray-200">
+                        <h3 className="text-gray-900 font-bold">No matches found</h3>
                     </div>
                 )}
             </div>
@@ -205,9 +172,8 @@ export default function BrowsePage() {
                         <div className="pt-4 border-t border-gray-100">
                             <button
                                 onClick={() => handleRsvp(selectedGame.id)}
-                                className={`w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all ${
-                                    selectedGame.isJoined ? 'bg-rose-50 text-rose-600 shadow-rose-100' : 'bg-blue-600 text-white shadow-blue-100'
-                                }`}
+                                className={`w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all ${selectedGame.isJoined ? 'bg-rose-50 text-rose-600 shadow-rose-100' : 'bg-blue-600 text-white shadow-blue-100'
+                                    }`}
                             >
                                 {selectedGame.isJoined ? 'Cancel Registration' : 'RSVP Now'}
                             </button>

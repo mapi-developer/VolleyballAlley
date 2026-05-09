@@ -22,10 +22,14 @@ app = FastAPI(
 # Configure CORS for the Telegram Mini App (Frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.WEB_APP_URL, "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://smelting-helpline-botanist.ngrok-free.dev",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allows all headers (especially x-telegram-init-data)
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")

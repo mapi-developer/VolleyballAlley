@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { fetchWithAuth } from '@/lib/api'; // Use named import
 
 export type UserRole = 'member' | 'organizer' | 'admin';
 
@@ -10,40 +11,36 @@ interface UserContextType {
   level: string;
   role: UserRole;
   setRole: (role: UserRole) => void;
-  // ADDED THESE TO INTERFACE
   footerVisible: boolean;
   setFooterVisible: (visible: boolean) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider = ({ 
-  children, 
-  initialRole, 
-  initialUser 
-}: { 
-  children: React.ReactNode, 
-  initialRole: UserRole,
-  initialUser: any 
-}) => {
+export const UserProvider = ({ children, initialRole, initialUser }: any) => {
   const [user, setUser] = useState<any>(initialUser);
   const [role, setRoleState] = useState<UserRole>(initialRole);
   const [footerVisible, setFooterVisible] = useState(true);
-  
-  const [rating] = useState(4.8);
-  const [level] = useState("Intermediate+");
+
+  const [rating, setRating] = useState(4.8);
+  const [level, setLevel] = useState("Intermediate+");
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
     if (tg?.initDataUnsafe?.user) {
       const telegramUser = tg.initDataUnsafe.user;
       setUser(telegramUser);
-      
-      const cookieData = {
-        first_name: telegramUser.first_name,
-        photo_url: telegramUser.photo_url
-      };
-      document.cookie = `user-data=${encodeURIComponent(JSON.stringify(cookieData))}; path=/; max-age=31536000`;
+
+      // UPDATED: Use fetchWithAuth instead of api.post
+      fetchWithAuth('/users/auth', {
+        method: 'POST',
+        body: JSON.stringify(telegramUser)
+      })
+        .then((data) => {
+          console.log("Sync successful:", data);
+          if (data.role) setRoleState(data.role);
+        })
+        .catch((err) => console.error("Auth failed:", err));
     }
   }, []);
 
@@ -53,10 +50,7 @@ export const UserProvider = ({
   };
 
   return (
-    <UserContext.Provider value={{ 
-      user, rating, level, role, setRole, 
-      footerVisible, setFooterVisible 
-    }}>
+    <UserContext.Provider value={{ user, rating, level, role, setRole, footerVisible, setFooterVisible }}>
       {children}
     </UserContext.Provider>
   );
