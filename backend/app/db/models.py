@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 from enum import Enum
 from typing import List, Optional
-from sqlmodel import SQLModel, Field, Relationship, BigInteger # Removed Column from here
-from sqlalchemy import Column, ForeignKey # Import these from sqlalchemy directly
+from sqlmodel import SQLModel, Field, Relationship, BigInteger
+from sqlalchemy import Column, ForeignKey
 
+# --- Enums ---
 class UserRole(str, Enum):
     MEMBER = "member"
     ORGANIZER = "organizer"
@@ -20,6 +21,7 @@ class RSVPStatus(str, Enum):
     CONFIRMED = "confirmed"
     WAITLISTED = "waitlisted"
 
+# --- USER ---
 class User(SQLModel, table=True):
     id: int = Field(sa_column=Column(BigInteger(), primary_key=True))
     username: Optional[str] = None
@@ -29,41 +31,33 @@ class User(SQLModel, table=True):
     role: UserRole = Field(default=UserRole.MEMBER)
     verified_level: PlayLevel = Field(default=PlayLevel.BEGINNER)
     reliability_score: float = Field(default=5.0)
+    last_evaluation_at: Optional[datetime] = None
     
+    hosted_events: List["Event"] = Relationship(back_populates="host")
     rsvps: List["RSVP"] = Relationship(back_populates="user")
+    
+    reports_received: List["BehaviorLog"] = Relationship(
+        back_populates="user", 
+        sa_relationship_kwargs={"foreign_keys": "BehaviorLog.user_id"}
+    )
+    reports_issued: List["BehaviorLog"] = Relationship(
+        back_populates="admin", 
+        sa_relationship_kwargs={"foreign_keys": "BehaviorLog.admin_id"}
+    )
 
+# --- RSVP ---
 class RSVP(SQLModel, table=True):
     user_id: int = Field(sa_column=Column(BigInteger(), ForeignKey("user.id"), primary_key=True))
     event_id: UUID = Field(foreign_key="event.id", primary_key=True)
     status: RSVPStatus = Field(default=RSVPStatus.CONFIRMED)
-    joined_at: datetime = Field(default_factory=datetime.utcnow) 
+    joined_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) 
     attended: bool = Field(default=True)
 
     user: User = Relationship(back_populates="rsvps")
     event: "Event" = Relationship(back_populates="attendees")
 
+# --- EVENT SCHEMAS ---
 class EventBase(SQLModel):
-    title: str
-    description: str
-    start_time: datetime  # Pydantic will now force-convert strings to objects here
-    end_time: datetime
-    location_name: str
-    price: int
-    revolut_tag: Optional[str] = None
-    max_players: int = Field(default=12)
-
-class Event(EventBase, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    host_id: int = Field(sa_column=Column(BigInteger(), ForeignKey("user.id")))
-    status: str = Field(default="Open")
-
-    attendees: List[RSVP] = Relationship(
-        back_populates="event", 
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
-    )
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    # FIXED: foreign_key="user.id" -> ForeignKey("user.id")
-    host_id: int = Field(sa_column=Column(BigInteger(), ForeignKey("user.id")))
     title: str
     description: str
     start_time: datetime
@@ -72,6 +66,23 @@ class Event(EventBase, table=True):
     price: int
     revolut_tag: Optional[str] = None
     max_players: int = Field(default=12)
+    level_required: PlayLevel = Field(default=PlayLevel.ALL)
+
+# This is the missing class that was causing the ImportError
+class EventUpdate(SQLModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    location_name: Optional[str] = None
+    price: Optional[int] = None
+    max_players: Optional[int] = None
+    level_required: Optional[PlayLevel] = None
+    revolut_tag: Optional[str] = None
+
+class Event(EventBase, table=True):
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    host_id: int = Field(sa_column=Column(BigInteger(), ForeignKey("user.id"), nullable=False))
     status: str = Field(default="Open")
 
     host: User = Relationship(back_populates="hosted_events")
@@ -80,14 +91,20 @@ class Event(EventBase, table=True):
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
 
+class EventReadWithAttendees(EventBase):
+    id: UUID
+    host_id: int
+    status: str
+    attendees: List[RSVP] = []
+
+# --- BEHAVIOR LOG ---
 class BehaviorLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    # FIXED: foreign_key="user.id" -> ForeignKey("user.id")
-    user_id: int = Field(sa_column=Column(BigInteger(), ForeignKey("user.id")))
-    admin_id: int = Field(sa_column=Column(BigInteger(), ForeignKey("user.id")))
+    user_id: int = Field(sa_column=Column(BigInteger(), ForeignKey("user.id"), nullable=False))
+    admin_id: int = Field(sa_column=Column(BigInteger(), ForeignKey("user.id"), nullable=False))
     penalty_points: float
     reason: str
-    created_at: datetime = Field(default_factory=datetime.utcnow) # Removed parentheses ()
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    user: User = Relationship(back_populates="reports_received", sa_relationship_kwargs={"foreign_keys": "[BehaviorLog.user_id]"})
-    admin: User = Relationship(back_populates="reports_issued", sa_relationship_kwargs={"foreign_keys": "[BehaviorLog.admin_id]"})
+    user: User = Relationship(back_populates="reports_received", sa_relationship_kwargs={"foreign_keys": "BehaviorLog.user_id"})
+    admin: User = Relationship(back_populates="reports_issued", sa_relationship_kwargs={"foreign_keys": "BehaviorLog.admin_id"})

@@ -3,16 +3,11 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine, StaticPool
 from app.main import app
 from app.db.database import get_session
-from app.api.deps import get_current_user, get_current_organizer
+from app.api.deps import get_current_user, get_current_organizer, get_current_admin
 from app.db.models import User, UserRole
 
-# Use an in-memory SQLite for testing
 sqlite_url = "sqlite://"
-engine = create_engine(
-    sqlite_url,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+engine = create_engine(sqlite_url, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 
 @pytest.fixture(name="session")
 def session_fixture():
@@ -23,21 +18,31 @@ def session_fixture():
 
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
-    # Override production session with test session
+    # Global state for tests to override user data
+    test_user_data = {"id": 12345, "role": UserRole.ORGANIZER}
+
     def get_session_override():
         return session
     
-    # Mock authenticated user (Organizer)
-    def get_current_user_override():
-        user = User(id=12345, first_name="Test Host", role=UserRole.ORGANIZER)
-        session.add(user)
-        session.commit()
+    def get_mock_user():
+        user = session.get(User, test_user_data["id"])
+        if not user:
+            user = User(id=test_user_data["id"], first_name="Test User", role=test_user_data["role"])
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        # Ensure role is updated if changed between tests
+        if user.role != test_user_data["role"]:
+            user.role = test_user_data["role"]
+            session.add(user)
+            session.commit()
+            session.refresh(user)
         return user
 
     app.dependency_overrides[get_session] = get_session_override
-    app.dependency_overrides[get_current_user] = get_current_user_override
-    app.dependency_overrides[get_current_organizer] = get_current_user_override
+    app.dependency_overrides[get_current_user] = get_mock_user
     
-    with TestClient(app) as client:
-        yield client
+    client = TestClient(app)
+    client.test_user_data = test_user_data # Attach helper for tests to change roles
+    yield client
     app.dependency_overrides.clear()

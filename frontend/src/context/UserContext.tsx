@@ -1,62 +1,50 @@
-"use client";
+'use client';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { fetchWithAuth } from '@/lib/api'; // Use named import
+// 1. Create the Context
+export const UserContext = createContext<any>(null);
 
-export type UserRole = 'member' | 'organizer' | 'admin';
-
-interface UserContextType {
-  user: any;
-  rating: number;
-  level: string;
-  role: UserRole;
-  setRole: (role: UserRole) => void;
-  footerVisible: boolean;
-  setFooterVisible: (visible: boolean) => void;
-}
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
-
-export const UserProvider = ({ children, initialRole, initialUser }: any) => {
-  const [user, setUser] = useState<any>(initialUser);
-  const [role, setRoleState] = useState<UserRole>(initialRole);
-  const [footerVisible, setFooterVisible] = useState(true);
-
-  const [rating, setRating] = useState(4.8);
-  const [level, setLevel] = useState("Intermediate+");
+// 2. The Provider Component
+export function UserProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user) {
-      const telegramUser = tg.initDataUnsafe.user;
-      setUser(telegramUser);
+    async function initApp() {
+      try {
+        // Signal to Telegram that the app is ready
+        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+        }
 
-      // CHANGE THIS:
-      // Use a GET request to /users/me to trigger the auto-registration in FastAPI
-      fetchWithAuth('/users/me')
-      .then((data) => {
-        console.log("Backend Sync/Auth successful:", data);
-        if (data.role) setRoleState(data.role);
-        // if (data.reliability_score) setRating(data.reliability_score);
-      })
-      .catch((err) => console.error("Auth failed:", err));
+        // Fetch or auto-register user profile in backend
+        const profile = await api.getProfile();
+        setUser(profile);
+      } catch (err) {
+        console.error("Failed to sync user with backend:", err);
+      } finally {
+        setLoading(false);
+      }
     }
+
+    initApp();
   }, []);
 
-  const setRole = (newRole: UserRole) => {
-    setRoleState(newRole);
-    document.cookie = `dev-role=${newRole}; path=/; max-age=31536000`;
-  };
-
   return (
-    <UserContext.Provider value={{ user, rating, level, role, setRole, footerVisible, setFooterVisible }}>
+    <UserContext.Provider value={{ user, setUser, loading }}>
       {children}
     </UserContext.Provider>
   );
-};
+}
 
+// 3. THE MISSING PIECE: Export the custom hook
+// This allows components to use: const { user } = useUser();
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUser must be used within UserProvider");
+  if (!context) {
+    throw new Error("useUser must be used within a UserProvider");
+  }
   return context;
 };
