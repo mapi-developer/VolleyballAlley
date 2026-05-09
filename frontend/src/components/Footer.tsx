@@ -1,14 +1,13 @@
 "use client";
 
-import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Search, CalendarDays, PlusCircle, UserCircle2 } from 'lucide-react';
-import { useUser } from '@/context/UserContext'; // Import useUser
+import { useUser } from '@/context/UserContext';
 
-const Footer = () => { // Removed isOrganizer prop
+const Footer = () => {
   const pathname = usePathname();
-  const { role } = useUser(); // Get dynamic role
+  const { role } = useUser();
   
   // Show Host tab for Organizers and Admins
   const isOrganizer = role === 'organizer' || role === 'admin';

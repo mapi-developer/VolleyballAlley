@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <UserProvider>
           <Header /> 
           <main className="flex-1 px-4">{children}</main>
-          <Footer isOrganizer={true} />
+          <Footer /> 
         </UserProvider>
       </body>
     </html>
