@@ -119,3 +119,130 @@ Shared Sub-Views & Components
 Event Card: A compact summary displaying type, title, date, time, attendee count, host, Maps button, Pay button, and a dynamic RSVP button.
 
 Event Detail View: An immersive full-page overlay. Features a colorful cover block, detailed date/time/location/payment rows, full description, and a visual progress bar indicating remaining attendee spots. The bottom navigation is replaced by a sticky RSVP action bar.
+
+
+
+
+
+
+
+** DB SPECS **
+
+A. Users Table
+
+The source of truth for every player and organizer.
+
+    id: BigInt (Primary Key - Telegram User ID).
+
+    username, first_name, photo_url: Strings.
+
+    role: Enum (member, organizer, admin).
+
+    verified_level: Enum (Beginner, Intermediate, Advanced, All).
+
+    reliability_score: Float (0.0 to 5.0).
+
+    last_evaluation_at: Timestamp (to enforce the 2-week cooldown).
+
+B. Events Table
+
+Stores match logistics created by Organizers.
+
+    id: UUID (Primary Key).
+
+    host_id: BigInt (Foreign Key → Users.id).
+
+    title, description, location_name, address: Strings.
+
+    start_time, end_time: Timestamps.
+
+    price: Integer (HUF/EUR).
+
+    revolut_tag: String.
+
+    max_players: Integer.
+
+    status: Enum (Open, Full, Completed, Cancelled).
+
+C. RSVPs (Registrations) Table
+
+Handles the many-to-many relationship and waitlist FIFO.
+
+    user_id: BigInt (Composite PK / FK).
+
+    event_id: UUID (Composite PK / FK).
+
+    status: Enum (confirmed, waitlisted).
+
+    joined_at: Timestamp (Critical for FIFO waitlist promotion).
+
+    attended: Boolean (Used by organizers post-game to calculate reliability).
+
+D. BehaviorLog Table
+
+Stores admin-issued "fines" and statistics.
+
+    id: Integer (PK).
+
+    user_id: BigInt (FK → Users.id).
+
+    admin_id: BigInt (FK → Users.id).
+
+    penalty_points: Float (Points deducted from reliability score).
+
+    reason: String.
+
+
+
+DB logic:
+
+User: 
+ - automatic add user if firtsly launch mini-app
+ - ability to update user role
+ - ability to change user data (username, telegram_id, ferified_level, etc.)
+
+Event:
+ - get all events
+ - get events with filtering (level, location, name, etc.)
+ - create event (with checking that user who creates is at least orginizer role)
+ - update event (with checking that user who updating is a host)
+ - delete event (with deletion of registration data connected with this event)
+
+Registration:
+ - get registrations by event_id
+ - get registrations by user_id
+ - create registration (by RSVP button user can create registration)
+ - update registration (if host manually promote or kicking user from registration status of registration needs to be changed)
+ - delete registration (if user cancel RSVP)
+
+Behavior Ratings:
+ - get reports by admin_id
+ - get reports by user_id
+ - create report (when admin want to fine user after game)
+ - update report (it also possible)
+ - delete report (if it was accident, or later solved)
+
+ DB Struct:
+
+    backend/
+    ├── app/
+    │   ├── api/
+    │   │   ├── deps.py          # Shared dependencies (Auth & RBAC)
+    │   │   └── routes/
+    │   │       ├── users.py      # Profile & Role management
+    │   │       ├── events.py     # Match creation & Filtering
+    │   │       ├── rsvps.py      # Join/Leave & Host roster management
+    │   │       └── reports.py    # Admin Behavior Ratings
+    │   ├── core/
+    │   │   ├── config.py         # Environment variables (Pydantic Settings)
+    │   │   └── security.py       # Telegram HMAC validation logic
+    │   ├── db/
+    │   │   ├── database.py       # Engine & Session setup
+    │   │   └── models.py         # SQLModel Table Definitions
+    │   ├── services/
+    │   │   ├── waitlist.py       # Automated FIFO promotion logic
+    │   │   └── scoring.py        # Reliability score calculations
+    │   └── main.py               # Application entry point & Lifespan
+    ├── .env                      # Secrets (Bot Token, DB URL)
+    ├── docker-compose.yml        # PostgreSQL container config
+    └── requirements.txt          # Python dependencies

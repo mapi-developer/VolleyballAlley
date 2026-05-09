@@ -5,3 +5,6 @@ psycopg2-binary
 pydantic-settings
 python-dotenv
 pyTelegramBotAPI
+pytest
+httpx
+pytest-asyncio

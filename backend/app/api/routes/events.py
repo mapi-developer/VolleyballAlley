@@ -1,166 +1,72 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import selectinload
-from sqlmodel import Session, select
-from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime, timedelta
 from uuid import UUID
-
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session, select
+from typing import List
 from app.db.database import get_session
-from app.db.models import Event, User, UserRole, RSVP
-from app.core.security import get_current_user
-
-# Import our new RBAC dependency
-from app.api.deps import get_current_organizer 
+from app.db.models import Event, User, UserRole, RSVP, RSVPStatus, PlayLevel, EventBase
+from app.api.deps import get_current_user, get_current_organizer
 
 router = APIRouter()
 
-# --- Schemas ---
-class EventCreate(BaseModel):
-    title: str
-    description: str
-    type: str  # Indoor/Outdoor
-    level_required: str
-    start_time: datetime
-    end_time: datetime
-    location_name: str
-    address: Optional[str] = None
-    price: int
-    revolut_tag: Optional[str] = None
-    max_players: int
+@router.get("/", response_model=list[Event])
+async def get_events(session: Session = Depends(get_session)):
+    return session.exec(select(Event)).all()
 
-class EventUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    type: Optional[str] = None
-    level_required: Optional[str] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    location_name: Optional[str] = None
-    address: Optional[str] = None
-    price: Optional[int] = None
-    revolut_tag: Optional[str] = None
-    max_players: Optional[int] = None
-    status: Optional[str] = None
-
-# --- Routes ---
-
-@router.post("/", response_model=Event, status_code=status.HTTP_201_CREATED)
-def create_event(
-    event_in: EventCreate,
-    organizer: User = Depends(get_current_organizer),
+@router.get("/", response_model=List[Event])
+async def get_filtered_events(
+    level: Optional[PlayLevel] = None,
+    location: Optional[str] = None,
     session: Session = Depends(get_session)
 ):
-    # 1. Create the event
-    new_event = Event(
-        **event_in.model_dump(),
-        host_id=organizer.id,
-        status="Open"
-    )
-    session.add(new_event)
-    session.commit()
-    session.refresh(new_event)
+    """Fetches upcoming events with optional filtering."""
+    statement = select(Event).where(Event.status == "Open")
+    if level:
+        statement = statement.where(Event.level_required == level)
+    if location:
+        statement = statement.where(Event.location_name.contains(location))
+    
+    return session.exec(statement).all()
 
-    # 2. FIX: Automatically join the host
+@router.post("/", response_model=Event)
+async def create_event(
+    event_in: EventBase,  # Use the Base schema to ensure string-to-datetime coercion
+    current_user: User = Depends(get_current_organizer),
+    session: Session = Depends(get_session)
+):
+    # 1. Create the Event object from the validated schema
+    db_event = Event.model_validate(event_in)
+    db_event.host_id = current_user.id
+    
+    session.add(db_event)
+    session.commit()
+    session.refresh(db_event)
+
+    # 2. AUTOMATION: Auto-register the host as the first attendee
     host_rsvp = RSVP(
-        user_id=organizer.id,
-        event_id=new_event.id,
-        status="confirmed"
+        user_id=current_user.id, 
+        event_id=db_event.id, 
+        status=RSVPStatus.CONFIRMED
     )
     session.add(host_rsvp)
     session.commit()
-
-    # 3. FIX: Reload event with relationships so attendees.length = 1
-    statement = (
-        select(Event)
-        .where(Event.id == new_event.id)
-        .options(selectinload(Event.attendees), selectinload(Event.host))
-    )
-    return session.exec(statement).first()
-
-@router.get("/", response_model=List[Event])
-def get_upcoming_events(session: Session = Depends(get_session)):
-    # Add .options(selectinload(...))
-    statement = select(Event).where(Event.status == "Open").options(
-        selectinload(Event.attendees),
-        selectinload(Event.host)
-    ).order_by(Event.start_time)
-    return session.exec(statement).all()
-
-@router.get("/hosted", response_model=List[Event])
-def get_hosted_events(
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
-):
-    # Add .options(selectinload(...))
-    statement = select(Event).where(Event.host_id == current_user.id).options(
-        selectinload(Event.attendees),
-        selectinload(Event.host)
-    ).order_by(Event.start_time)
-    return session.exec(statement).all()
-
-@router.patch("/{event_id}", response_model=Event)
-def update_event(
-    event_id: UUID,
-    event_update: EventUpdate,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
-):
-    """
-    Update an existing event. Only the host or an admin can modify it.
-    Enforces a 24-hour lock on changing time and location.
-    """
-    event = session.get(Event, event_id)
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-        
-    # Security: Verify ownership
-    if event.host_id != current_user.id and current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Not authorized to edit this event")
-
-    # Business Logic: 24-Hour Edit Lock check
-    now = datetime.utcnow()
-    # Strip timezone info if any for safe subtraction
-    time_until_start = event.start_time.replace(tzinfo=None) - now 
     
-    if time_until_start < timedelta(hours=24):
-        # Prevent changing critical logistics if the game is soon
-        if event_update.start_time or event_update.location_name:
-            raise HTTPException(
-                status_code=400, 
-                detail="Cannot change start time or location less than 24 hours before the event."
-            )
+    # 3. Refresh one last time to include the attendees list in the response
+    session.refresh(db_event)
+    return db_event
 
-    # Apply the updates to the database model
-    update_data = event_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(event, key, value)
-        
-    session.add(event)
-    session.commit()
-    session.refresh(event)
-    
-    return event
-
-@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_event(
+@router.delete("/{event_id}")
+async def delete_event(
     event_id: UUID,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """
-    Permanently delete an event. Only the host or an admin can delete.
-    """
+    """Secured deletion (Host only). Cascade handles RSVPs."""
     event = session.get(Event, event_id)
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-        
-    # Security: Verify ownership
-    if event.host_id != current_user.id and current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this event")
-        
+    if not event or event.host_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
     session.delete(event)
     session.commit()
-    
-    return None
-
+    return {"detail": "Event deleted"}
