@@ -1,6 +1,6 @@
 // frontend/src/lib/api.ts
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     let initData = "";
@@ -15,6 +15,8 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     const headers = {
         "Content-Type": "application/json",
         "x-telegram-init-data": initData,
+        "ngrok-skip-browser-warning": "true", 
+        "Bypass-Tunnel-Reminder": "true",
         ...options.headers,
     };
 

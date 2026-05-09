@@ -31,16 +31,15 @@ export const UserProvider = ({ children, initialRole, initialUser }: any) => {
       const telegramUser = tg.initDataUnsafe.user;
       setUser(telegramUser);
 
-      // UPDATED: Use fetchWithAuth instead of api.post
-      fetchWithAuth('/users/auth', {
-        method: 'POST',
-        body: JSON.stringify(telegramUser)
+      // CHANGE THIS:
+      // Use a GET request to /users/me to trigger the auto-registration in FastAPI
+      fetchWithAuth('/users/me')
+      .then((data) => {
+        console.log("Backend Sync/Auth successful:", data);
+        if (data.role) setRoleState(data.role);
+        // if (data.reliability_score) setRating(data.reliability_score);
       })
-        .then((data) => {
-          console.log("Sync successful:", data);
-          if (data.role) setRoleState(data.role);
-        })
-        .catch((err) => console.error("Auth failed:", err));
+      .catch((err) => console.error("Auth failed:", err));
     }
   }, []);
 
