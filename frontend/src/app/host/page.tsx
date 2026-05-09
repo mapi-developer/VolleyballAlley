@@ -64,7 +64,7 @@ export default function HostPage() {
             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Dashboard...</p>
           </div>
         ) : hostedEvents.length > 0 ? hostedEvents.map((event) => {
-          const filled = event.attendees?.length || 0; 
+          const filled = event.attendees?.length || 0;
           return (
             <div key={event.id} className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100 flex flex-col gap-5">
               <div className="flex items-center justify-between gap-3">

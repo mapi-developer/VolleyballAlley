@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Pencil, Calendar, MapPin, Clock, Banknote, Shield, 
-  UserMinus, UserPlus, Trash2, AlertTriangle, Search, Save, Loader2 
+import {
+  Pencil, Calendar, MapPin, Clock, Banknote, Shield,
+  UserMinus, UserPlus, Trash2, AlertTriangle, Search, Save, Loader2
 } from 'lucide-react';
 import BottomSheet from '@/components/BottomSheet';
 import { FormField } from '@/components/FormField';
@@ -21,7 +21,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Local state for form fields to allow editing before saving
   const [editData, setEditData] = useState<any>(null);
 
@@ -107,7 +107,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
       await fetchWithAuth(`/rsvps/${event.id}/attendees/${targetUserId}?force_confirm=true`, {
         method: 'POST'
       });
-      onUpdate(); 
+      onUpdate();
     } catch (err: any) {
       alert(err.message);
     }
@@ -116,7 +116,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
   return (
     <BottomSheet isOpen={isOpen} onClose={() => { onClose(); setShowDeleteConfirm(false); }} title="Manage Event">
       <div className="space-y-8 pb-10">
-        
+
         {/* 1. Editable Fields */}
         <div className="space-y-6">
           <FormField label="Title" icon={Pencil}>
@@ -139,20 +139,36 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
             </FormField>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <FormField label="Time Slot" icon={Clock} disabled={isLocked(editData.rawDate)}>
-              <div className="flex gap-2">
-                <input type="time" disabled={isLocked(editData.rawDate)} className="w-full bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold outline-none" value={editData.time.split(' - ')[0]} onChange={e => handleTimeChange('start', e.target.value)} />
-                <input type="time" disabled={isLocked(editData.rawDate)} className="w-full bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold outline-none" value={editData.time.split(' - ')[1]} onChange={e => handleTimeChange('end', e.target.value)} />
+              <div className="flex items-center gap-3">
+                <input
+                  type="time"
+                  disabled={isLocked(editData.rawDate)}
+                  className="flex-1 bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold disabled:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500"
+                  value={editData.time.split(' - ')[0] || ''}
+                  onChange={e => handleTimeChange('start', e.target.value)}
+                />
+                <span className="font-black text-gray-300">to</span>
+                <input
+                  type="time"
+                  disabled={isLocked(editData.rawDate)}
+                  className="flex-1 bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold disabled:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500"
+                  value={editData.time.split(' - ')[1] || ''}
+                  onChange={e => handleTimeChange('end', e.target.value)}
+                />
               </div>
             </FormField>
-            <FormField label="Fee (HUF)" icon={Banknote}>
-              <input type="number" className="w-full bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold outline-none" value={editData.price} onChange={e => setEditData({ ...editData, price: e.target.value })} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <FormField label="Court Fee (HUF)" icon={Banknote}>
+              <input type="number" placeholder='0 for free' className="w-full bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500" value={editData.price} onChange={e => setEditData({ ...editData, price: e.target.value })} />
             </FormField>
           </div>
 
           {/* Primary Save Action */}
-          <button 
+          <button
             onClick={handleSaveChanges}
             disabled={isSaving}
             className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-black flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-zinc-100"
@@ -164,16 +180,30 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
 
         {/* 2. Attendee Roster */}
         <div className="space-y-3">
-          <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">Attendees ({event.attendees.length} / {event.maxPlayers})</h4>
+          <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+            Attendees ({(editData.attendees?.length || 0)} / {editData.slots || editData.maxPlayers})
+          </h4>
           <div className="bg-zinc-50 rounded-3xl divide-y divide-white/50 overflow-hidden">
-            {event.attendees.map((a: any) => (
+            {editData.attendees?.map((a: any) => (
               <div key={a.id} className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-700">{a.user?.first_name || a.name}</span>
-                  {a.role === 'Organizer' && <Shield size={12} className="text-blue-500" />}
+                  <span className="text-sm font-bold text-gray-700">
+                    {a.user?.first_name || a.name}
+                  </span>
+                  {/* Show the Shield icon if this attendee is the host */}
+                  {a.user_id === editData.host_id && (
+                    <Shield size={12} className="text-blue-500" />
+                  )}
                 </div>
-                {a.role !== 'Organizer' && (
-                  <button onClick={() => handleRemoveAttendee(a.id)} className="p-2 text-rose-500 bg-white rounded-xl shadow-sm active:scale-90"><UserMinus size={16} /></button>
+
+                {/* HIDE the UserMinus (Kick) button if this is the host */}
+                {a.user_id !== editData.host_id && (
+                  <button
+                    onClick={() => handleRemoveAttendee(a.id)}
+                    className="p-2 text-rose-500 bg-white rounded-xl shadow-sm"
+                  >
+                    <UserMinus size={16} />
+                  </button>
                 )}
               </div>
             ))}
@@ -181,11 +211,11 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
         </div>
 
         {/* 3. Waitlist Management */}
-        {event.waitlist && event.waitlist.length > 0 && (
+        {editData.waitlist && editData.waitlist.length > 0 && (
           <div className="space-y-4">
-            <h4 className="text-[11px] font-black text-amber-500 uppercase tracking-widest px-1 flex items-center gap-2"><Clock size={12} /> Waitlist ({event.waitlist.length})</h4>
+            <h4 className="text-[11px] font-black text-amber-500 uppercase tracking-widest px-1 flex items-center gap-2"><Clock size={12} /> Waitlist ({editData.waitlist.length})</h4>
             <div className="bg-amber-50 rounded-3xl divide-y divide-white/50 overflow-hidden border border-amber-100">
-              {event.waitlist.map((w: any) => (
+              {editData.waitlist.map((w: any) => (
                 <div key={w.id} className="flex items-center justify-between p-4">
                   <span className="text-sm font-bold text-amber-900">{w.user?.first_name || w.name}</span>
                   <button onClick={() => handlePromoteWaitlist(w.id)} className="p-2 text-emerald-600 bg-white rounded-xl shadow-sm active:scale-90"><UserPlus size={16} /></button>

@@ -21,7 +21,7 @@ class RSVP(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     event_id: UUID = Field(foreign_key="event.id", primary_key=True)
     status: str = Field(default="confirmed")  # confirmed, waitlisted
-    joined_at: datetime = Field(default_factory=datetime.now(tz=timezone.utc))
+    joined_at: datetime = Field(default_factory=datetime.utcnow)
     attended: bool = Field(default=True)  # Marked by host after game
     
     user: "User" = Relationship(back_populates="registrations")
@@ -68,7 +68,12 @@ class Event(SQLModel, table=True):
     
     # Relationships
     host: User = Relationship(back_populates="hosted_events")
-    attendees: List[RSVP] = Relationship(back_populates="event")
+    attendees: List["RSVP"] = Relationship(
+        back_populates="event",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan", # This deletes RSVPs when Event is deleted
+        }
+    )
 
 class BehaviorLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

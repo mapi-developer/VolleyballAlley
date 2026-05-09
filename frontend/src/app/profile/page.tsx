@@ -1,9 +1,9 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
-import { 
-  Star, ShieldCheck, Copy, Check, Bell, 
-  Settings, Info, ChevronRight, Loader2 
+import {
+  Star, ShieldCheck, Copy, Check, Bell,
+  Settings, Info, ChevronRight, Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import BottomSheet from "@/components/BottomSheet";
@@ -11,7 +11,8 @@ import { fetchWithAuth } from "@/lib/api"; // Make sure to import our new API to
 
 export default function ProfilePage() {
   // We keep setRole from context just so your dev-toggle still works for testing
-  const { role, setRole } = useUser(); 
+  const { role, setRole } = useUser();
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
   // --- NEW: Backend Data States ---
   const [apiUser, setApiUser] = useState<any>(null);
@@ -29,6 +30,26 @@ export default function ProfilePage() {
     reminders: true,
     marketing: false
   });
+
+  const handleRoleChange = async (newRole: 'member' | 'organizer' | 'admin') => {
+    try {
+      setIsUpdatingRole(true);
+
+      // Hit the new backend route
+      await fetchWithAuth(`/users/me/role?new_role=${newRole}`, {
+        method: 'PATCH'
+      });
+
+      // Update global context so the footer tab appears immediately
+      setRole(newRole);
+
+      console.log(`Role successfully changed to ${newRole}`);
+    } catch (err: any) {
+      alert(err.message || "Failed to update role in database");
+    } finally {
+      setIsUpdatingRole(false);
+    }
+  };
 
   const toggleSetting = (key: keyof typeof notifications) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
@@ -53,7 +74,7 @@ export default function ProfilePage() {
         setIsLoading(false);
       }
     }
-    
+
     loadBackendData();
   }, []);
 
@@ -112,7 +133,7 @@ export default function ProfilePage() {
               {apiUser.first_name} {apiUser.last_name || ""}
             </h2>
             {apiUser.username && (
-              <button 
+              <button
                 onClick={() => {
                   navigator.clipboard.writeText(`@${apiUser.username}`);
                   setCopied(true);
@@ -127,9 +148,9 @@ export default function ProfilePage() {
           </div>
           <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center border-4 border-zinc-50 shrink-0 overflow-hidden">
             {apiUser.photo_url ? (
-               <img src={apiUser.photo_url} className="w-full h-full object-cover" alt="Profile" /> 
+              <img src={apiUser.photo_url} className="w-full h-full object-cover" alt="Profile" />
             ) : (
-               <span className="text-blue-600 font-bold text-3xl">{initial}</span>
+              <span className="text-blue-600 font-bold text-3xl">{initial}</span>
             )}
           </div>
         </div>
@@ -163,8 +184,8 @@ export default function ProfilePage() {
         </div>
         <div className="divide-y divide-gray-50">
           {menuItems.map((item) => (
-            <button 
-              key={item.id} 
+            <button
+              key={item.id}
               onClick={() => setActiveView(item.id)}
               className="w-full flex items-center gap-4 px-6 py-5 transition-all active:bg-zinc-50 group text-left"
             >
@@ -179,34 +200,34 @@ export default function ProfilePage() {
       </div>
 
       {/* Popups Content */}
-      <BottomSheet 
-        isOpen={activeView !== null} 
+      <BottomSheet
+        isOpen={activeView !== null}
         onClose={() => setActiveView(null)}
         title={menuItems.find(i => i.id === activeView)?.label || ""}
       >
         {activeView === 'notifications' && (
           <div className="space-y-1 divide-y divide-gray-50">
-            <ToggleRow 
-              label="New Games Alerts" 
-              description="Be the first to know when a new court is booked." 
+            <ToggleRow
+              label="New Games Alerts"
+              description="Be the first to know when a new court is booked."
               active={notifications.newEvents}
               onClick={() => toggleSetting('newEvents')}
             />
-            <ToggleRow 
-              label="Waitlist Updates" 
-              description="Get a DM when you are promoted from the waitlist." 
+            <ToggleRow
+              label="Waitlist Updates"
+              description="Get a DM when you are promoted from the waitlist."
               active={notifications.waitlist}
               onClick={() => toggleSetting('waitlist')}
             />
-            <ToggleRow 
-              label="Game Reminders" 
-              description="We will send a reminder 2 hours before the whistle." 
+            <ToggleRow
+              label="Game Reminders"
+              description="We will send a reminder 2 hours before the whistle."
               active={notifications.reminders}
               onClick={() => toggleSetting('reminders')}
             />
-            <ToggleRow 
-              label="Administrative" 
-              description="System updates and community announcements." 
+            <ToggleRow
+              label="Administrative"
+              description="System updates and community announcements."
               active={notifications.marketing}
               onClick={() => toggleSetting('marketing')}
             />
@@ -219,28 +240,25 @@ export default function ProfilePage() {
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
                 Development Role Switch
               </p>
-              <div className="flex p-1 bg-zinc-100 rounded-2xl">
+              <div className={`flex p-1 bg-zinc-100 rounded-2xl ${isUpdatingRole ? 'opacity-50 pointer-events-none' : ''}`}>
                 {(['member', 'organizer', 'admin'] as const).map((r) => (
                   <button
                     key={r}
-                    onClick={() => setRole(r)}
-                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
-                      role === r 
-                        ? 'bg-white text-blue-600 shadow-sm' 
+                    onClick={() => handleRoleChange(r)} // FIX: Call the persistent handler
+                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${role === r
+                        ? 'bg-white text-blue-600 shadow-sm'
                         : 'text-gray-400 active:text-gray-600'
-                    }`}
+                      }`}
                   >
                     {r.charAt(0).toUpperCase() + r.slice(1)}
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-gray-400 mt-3 italic leading-relaxed px-1">
-                Note: This switch is for UI development only. Changing to "Organizer" or "Admin" will unlock the Host tab in the footer.
-              </p>
+              {/* ... (rest of disclaimer) ... */}
             </div>
           </div>
         )}
-        
+
         {activeView === 'about' && (
           <div className="space-y-4 text-center">
             <div className="text-5xl mb-4">🏐</div>

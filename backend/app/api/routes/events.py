@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from typing import List, Optional
@@ -6,7 +7,7 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from app.db.database import get_session
-from app.db.models import Event, User, UserRole
+from app.db.models import Event, User, UserRole, RSVP
 from app.core.security import get_current_user
 
 # Import our new RBAC dependency
@@ -47,29 +48,43 @@ class EventUpdate(BaseModel):
 @router.post("/", response_model=Event, status_code=status.HTTP_201_CREATED)
 def create_event(
     event_in: EventCreate,
-    organizer: User = Depends(get_current_organizer), # <-- RBAC Dependency injected here!
+    organizer: User = Depends(get_current_organizer),
     session: Session = Depends(get_session)
 ):
-    """
-    Create a new volleyball event. 
-    Only users with the 'organizer' or 'admin' role can do this.
-    """
+    # 1. Create the event
     new_event = Event(
         **event_in.model_dump(),
-        host_id=organizer.id, # Use the organizer object directly
+        host_id=organizer.id,
         status="Open"
     )
-    
     session.add(new_event)
     session.commit()
     session.refresh(new_event)
-    
-    return new_event
+
+    # 2. FIX: Automatically join the host
+    host_rsvp = RSVP(
+        user_id=organizer.id,
+        event_id=new_event.id,
+        status="confirmed"
+    )
+    session.add(host_rsvp)
+    session.commit()
+
+    # 3. FIX: Reload event with relationships so attendees.length = 1
+    statement = (
+        select(Event)
+        .where(Event.id == new_event.id)
+        .options(selectinload(Event.attendees), selectinload(Event.host))
+    )
+    return session.exec(statement).first()
 
 @router.get("/", response_model=List[Event])
 def get_upcoming_events(session: Session = Depends(get_session)):
-    """Fetch all 'Open' events for the Browse tab, sorted by start time."""
-    statement = select(Event).where(Event.status == "Open").order_by(Event.start_time)
+    # Add .options(selectinload(...))
+    statement = select(Event).where(Event.status == "Open").options(
+        selectinload(Event.attendees),
+        selectinload(Event.host)
+    ).order_by(Event.start_time)
     return session.exec(statement).all()
 
 @router.get("/hosted", response_model=List[Event])
@@ -77,8 +92,11 @@ def get_hosted_events(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Fetch events hosted by the currently logged-in user."""
-    statement = select(Event).where(Event.host_id == current_user.id).order_by(Event.start_time)
+    # Add .options(selectinload(...))
+    statement = select(Event).where(Event.host_id == current_user.id).options(
+        selectinload(Event.attendees),
+        selectinload(Event.host)
+    ).order_by(Event.start_time)
     return session.exec(statement).all()
 
 @router.patch("/{event_id}", response_model=Event)
@@ -145,3 +163,4 @@ def delete_event(
     session.commit()
     
     return None
+

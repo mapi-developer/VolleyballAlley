@@ -36,3 +36,22 @@ def get_my_stats(
         "total_games_joined": len(all_rsvps),
         "games_attended": games_attended
     }
+
+@router.patch("/me/role", response_model=User)
+def update_my_role(
+    new_role: str, # passed as a query param or part of body
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Updates the role of the current user. 
+    Valid roles: 'member', 'organizer', 'admin'
+    """
+    if new_role not in ["member", "organizer", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role type")
+        
+    current_user.role = new_role
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user

@@ -51,18 +51,21 @@ export function mapEventToGame(event: any): any {
         type: event.type,
         level: event.level_required,
         rawDate: event.start_time,
-        // Format: "Sat, May 10"
         date: start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        // Format: "18:00 - 20:00"
         time: `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')} - ${end.getHours()}:${end.getMinutes().toString().padStart(2, '0')}`,
-        currentPlayers: event.current_players || 0, // Ensure backend provides this or default to 0
         maxPlayers: event.max_players,
+        slots: event.max_players, 
         hostName: event.host?.first_name || "Organizer",
         hostRole: event.host?.role || "Host",
-        price: event.price === 0 ? "Free" : `€${(event.price / 100).toFixed(2)}`, // Assuming price is in cents
+        host_id: event.host_id, // Important for "cannot be kicked" logic
+        price: event.price === 0 ? "Free" : `€${(event.price / 100).toFixed(2)}`,
         location: event.location_name,
         revolutTag: event.revolut_tag,
-        isJoined: event.is_joined || false // Backend logic should check RSVPs for this
+        isJoined: event.is_joined || false,
+        // --- ADD THESE TWO LINES ---
+        attendees: event.attendees || [], 
+        waitlist: event.attendees?.filter((a: any) => a.status === 'waitlisted') || []
+        // ---------------------------
     };
 }
 
