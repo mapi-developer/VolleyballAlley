@@ -14,31 +14,39 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+export const UserProvider = ({ 
+  children, 
+  initialRole, 
+  initialUser 
+}: { 
+  children: React.ReactNode, 
+  initialRole: UserRole,
+  initialUser: any 
+}) => {
+  const [user, setUser] = useState<any>(initialUser); // Initialize with cookie data
+  const [role, setRoleState] = useState<UserRole>(initialRole);
+  
   const [rating] = useState(4.8);
   const [level] = useState("Intermediate+");
-  
-  // 1. Initialize role as 'member' initially to avoid hydration errors
-  const [role, setRoleState] = useState<UserRole>('member');
 
-  // 2. Load the role from localStorage on mount
   useEffect(() => {
-    const savedRole = localStorage.getItem('dev-role') as UserRole;
-    if (savedRole) {
-      setRoleState(savedRole);
-    }
-
     const tg = (window as any).Telegram?.WebApp;
     if (tg?.initDataUnsafe?.user) {
-      setUser(tg.initDataUnsafe.user);
+      const telegramUser = tg.initDataUnsafe.user;
+      setUser(telegramUser);
+      
+      // Save basic user info to cookie for zero-flicker header
+      const cookieData = {
+        first_name: telegramUser.first_name,
+        photo_url: telegramUser.photo_url
+      };
+      document.cookie = `user-data=${encodeURIComponent(JSON.stringify(cookieData))}; path=/; max-age=31536000`;
     }
   }, []);
 
-  // 3. Wrapper function to save the role when it changes
   const setRole = (newRole: UserRole) => {
     setRoleState(newRole);
-    localStorage.setItem('dev-role', newRole);
+    document.cookie = `dev-role=${newRole}; path=/; max-age=31536000`;
   };
 
   return (
