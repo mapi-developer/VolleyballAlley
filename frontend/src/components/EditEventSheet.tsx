@@ -16,13 +16,15 @@ interface EditEventSheetProps {
 export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDelete }: EditEventSheetProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const todayStr = new Date().toISOString().split('T')[0];
+  
+  // Get today's date in YYYY-MM-DD format based on local time
+  const todayStr = new Date().toLocaleDateString('en-CA').split('T')[0];
 
   if (!event) return null;
 
   const isLocked = (dateString: string) => {
     if (!dateString) return false;
-    return (new Date(dateString).getTime() - Date.now()) < (24 * 60 * 60 * 1000);
+    return (new Date(dateString).getTime() - Date.now()) < (6 * 60 * 60 * 1000);
   };
 
   const handleTimeChange = (type: 'start' | 'end', val: string) => {
@@ -51,11 +53,29 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
           
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Date" icon={Calendar} disabled={isLocked(event.rawDate)}>
-              <input type="date" min={todayStr} disabled={isLocked(event.rawDate)} className="w-full bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold disabled:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500" value={event.rawDate.split('T')[0]} 
+              <input 
+                type="date" 
+                min={todayStr} 
+                disabled={isLocked(event.rawDate)} 
+                className="w-full bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold disabled:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500" 
+                value={event.rawDate.split('T')[0]} 
                 onChange={e => {
-                  const newRaw = `${e.target.value}T${event.rawDate.split('T')[1]}`;
-                  onUpdate({ ...event, rawDate: newRaw, date: new Date(newRaw).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) });
-                }} />
+                  const selectedDate = e.target.value;
+                  
+                  // Validation: Reject if the chosen date is before today
+                  if (selectedDate < todayStr) {
+                    alert("You cannot move an event to a past date.");
+                    return; // Exit early, keeping the date exactly as it was
+                  }
+
+                  const newRaw = `${selectedDate}T${event.rawDate.split('T')[1]}`;
+                  onUpdate({ 
+                    ...event, 
+                    rawDate: newRaw, 
+                    date: new Date(newRaw).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) 
+                  });
+                }} 
+              />
             </FormField>
             <FormField label="Location" icon={MapPin} disabled={isLocked(event.rawDate)}>
               <input type="text" disabled={isLocked(event.rawDate)} className="w-full bg-zinc-50 border-none rounded-2xl p-4 text-sm font-bold disabled:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500" value={event.location} onChange={e => onUpdate({ ...event, location: e.target.value })} />
@@ -63,7 +83,6 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-             {/* EXACTLY MATCHES CREATE EVENT TIME WIDGET NOW */}
              <FormField label="Time Slot" icon={Clock} disabled={isLocked(event.rawDate)}>
               <div className="flex items-center gap-3">
                 <input 
