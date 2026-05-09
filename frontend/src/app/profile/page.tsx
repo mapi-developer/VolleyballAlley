@@ -13,7 +13,7 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
   const [activeView, setActiveView] = useState<string | null>(null);
 
-  // 1. Notification State - Hardcoded for now
+  // Notification State - Hardcoded for now
   const [notifications, setNotifications] = useState({
     newEvents: true,
     waitlist: true,
@@ -47,7 +47,8 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="py-3 space-y-6">
+    // ADDED ANIMATION CLASSES HERE
+    <div className="py-3 space-y-6 animate-in fade-in duration-500">
       {/* Identity Card */}
       <div className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
@@ -62,7 +63,7 @@ export default function ProfilePage() {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="flex items-center gap-1.5 text-blue-600 font-semibold text-sm mt-1 bg-blue-50/50 px-2.5 py-1 rounded-lg w-fit active:scale-95"
+                className="flex items-center gap-1.5 text-blue-600 font-semibold text-sm mt-1 bg-blue-50/50 px-2.5 py-1 rounded-lg w-fit active:scale-95 transition-transform"
               >
                 @{user.username}
                 {copied ? <Check size={14} /> : <Copy size={14} className="opacity-60" />}
@@ -158,7 +159,7 @@ export default function ProfilePage() {
                 {(['member', 'organizer', 'admin'] as const).map((r) => (
                   <button
                     key={r}
-                    onClick={() => setRole(r)} // Using setRole from context
+                    onClick={() => setRole(r)}
                     className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
                       role === r 
                         ? 'bg-white text-blue-600 shadow-sm' 
