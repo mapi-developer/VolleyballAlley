@@ -4,19 +4,19 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Search, CalendarDays, PlusCircle, UserCircle2 } from 'lucide-react';
+import { useUser } from '@/context/UserContext'; // Import useUser
 
-interface FooterProps {
-  isOrganizer?: boolean;
-}
-
-const Footer = ({ isOrganizer = false }: FooterProps) => {
+const Footer = () => { // Removed isOrganizer prop
   const pathname = usePathname();
+  const { role } = useUser(); // Get dynamic role
+  
+  // Show Host tab for Organizers and Admins
+  const isOrganizer = role === 'organizer' || role === 'admin';
 
   const navItems = [
     { label: 'Home', icon: Home, href: '/' },
     { label: 'Browse', icon: Search, href: '/browse' },
     { label: 'My Games', icon: CalendarDays, href: '/my-games' },
-    // Show Host button only for organizers
     ...(isOrganizer ? [{ label: 'Host', icon: PlusCircle, href: '/host' }] : []),
     { label: 'Profile', icon: UserCircle2, href: '/profile' },
   ];
@@ -35,18 +35,9 @@ const Footer = ({ isOrganizer = false }: FooterProps) => {
               isActive ? 'text-blue-600' : 'text-gray-400'
             }`}
           >
-            <Icon 
-              size={24} 
-              strokeWidth={isActive ? 2.5 : 2} 
-            />
-            <span className="text-[10px] font-medium mt-1">
-              {item.label}
-            </span>
-            
-            {/* Active Highlight Dot */}
-            {isActive && (
-              <div className="absolute bottom-2 w-1 h-1 bg-blue-600 rounded-full" />
-            )}
+            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+            <span className="text-[10px] font-medium mt-1">{item.label}</span>
+            {isActive && <div className="absolute bottom-2 w-1 h-1 bg-blue-600 rounded-full" />}
           </Link>
         );
       })}

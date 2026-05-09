@@ -9,7 +9,7 @@ import { useState } from "react";
 import BottomSheet from "@/components/BottomSheet";
 
 export default function ProfilePage() {
-  const { user, rating, level } = useUser();
+  const { user, rating, level, role, setRole } = useUser();
   const [copied, setCopied] = useState(false);
   const [activeView, setActiveView] = useState<string | null>(null);
 
@@ -146,9 +146,37 @@ export default function ProfilePage() {
             />
           </div>
         )}
+
+        {activeView === 'preferences' && (
+          <div className="space-y-6">
+            {/* Development Role Selector */}
+            <div>
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
+                Development Role Switch
+              </p>
+              <div className="flex p-1 bg-zinc-100 rounded-2xl">
+                {(['member', 'organizer', 'admin'] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRole(r)} // Using setRole from context
+                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+                      role === r 
+                        ? 'bg-white text-blue-600 shadow-sm' 
+                        : 'text-gray-400 active:text-gray-600'
+                    }`}
+                  >
+                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400 mt-3 italic leading-relaxed px-1">
+                Note: This switch is for UI development only. Changing to "Organizer" or "Admin" will unlock the Host tab in the footer.
+              </p>
+            </div>
+          </div>
+        )}
         
         {/* Placeholder for other views */}
-        {activeView === 'preferences' && <div className="text-center py-10 text-gray-400 italic">Theme and UI settings coming soon</div>}
         {activeView === 'about' && (
           <div className="space-y-4 text-center">
             <div className="text-5xl mb-4">🏐</div>
