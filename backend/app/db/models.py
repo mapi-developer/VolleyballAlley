@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID, uuid4
 from sqlmodel import Field, Relationship, SQLModel
@@ -21,14 +21,14 @@ class RSVP(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     event_id: UUID = Field(foreign_key="event.id", primary_key=True)
     status: str = Field(default="confirmed")  # confirmed, waitlisted
-    joined_at: datetime = Field(default_factory=datetime.utcnow)
+    joined_at: datetime = Field(default_factory=datetime.now(tz=timezone.utc))
     attended: bool = Field(default=True)  # Marked by host after game
     
     user: "User" = Relationship(back_populates="registrations")
     event: "Event" = Relationship(back_populates="attendees")
 
 class User(SQLModel, table=True):
-    id: int = Field(primary_key=True)  # Telegram User ID
+    id: int = Field(primary_key=True)
     username: Optional[str] = None
     first_name: str
     last_name: Optional[str] = None
@@ -41,7 +41,14 @@ class User(SQLModel, table=True):
     # Relationships
     registrations: List[RSVP] = Relationship(back_populates="user")
     hosted_events: List["Event"] = Relationship(back_populates="host")
-    behavior_logs: List["BehaviorLog"] = Relationship(back_populates="user")
+    behavior_logs: List["BehaviorLog"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"foreign_keys": "[BehaviorLog.user_id]"} 
+    )
+    issued_behavior_logs: List["BehaviorLog"] = Relationship(
+        back_populates="admin",
+        sa_relationship_kwargs={"foreign_keys": "[BehaviorLog.admin_id]"}
+    )
 
 class Event(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -66,9 +73,19 @@ class Event(SQLModel, table=True):
 class BehaviorLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    admin_id: int = Field(foreign_key="user.id") # Admin who issued the fine
+    admin_id: int = Field(foreign_key="user.id") 
     penalty_points: float
     reason: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
-    user: User = Relationship(back_populates="behavior_logs")
+    # Explicitly link 'user' to 'user_id'
+    user: User = Relationship(
+        back_populates="behavior_logs",
+        sa_relationship_kwargs={"foreign_keys": "[BehaviorLog.user_id]"}
+    )
+    
+    # Explicitly link 'admin' to 'admin_id'
+    admin: User = Relationship(
+        back_populates="issued_behavior_logs",
+        sa_relationship_kwargs={"foreign_keys": "[BehaviorLog.admin_id]"}
+    )
