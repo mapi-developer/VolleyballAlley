@@ -60,7 +60,7 @@ const Header = () => {
     }
   };
 
-  const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : 'V';
+  const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : '';
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 z-50 shadow-sm">

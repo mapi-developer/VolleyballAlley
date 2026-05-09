@@ -3,17 +3,26 @@
 import { useUser } from "@/context/UserContext";
 import { 
   Star, ShieldCheck, Copy, Check, Bell, 
-  Settings, Info, ChevronRight 
+  Settings, Info, ChevronRight, Loader2 
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomSheet from "@/components/BottomSheet";
+import { fetchWithAuth } from "@/lib/api"; // Make sure to import our new API tool!
 
 export default function ProfilePage() {
-  const { user, rating, level, role, setRole } = useUser();
+  // We keep setRole from context just so your dev-toggle still works for testing
+  const { role, setRole } = useUser(); 
+
+  // --- NEW: Backend Data States ---
+  const [apiUser, setApiUser] = useState<any>(null);
+  const [apiStats, setApiStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [copied, setCopied] = useState(false);
   const [activeView, setActiveView] = useState<string | null>(null);
 
-  // Notification State - Hardcoded for now
+  // Notification State
   const [notifications, setNotifications] = useState({
     newEvents: true,
     waitlist: true,
@@ -25,7 +34,30 @@ export default function ProfilePage() {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : 'V';
+  // --- NEW: Fetch Data on Mount ---
+  useEffect(() => {
+    async function loadBackendData() {
+      try {
+        setIsLoading(true);
+        // Fetch identity from /api/users/me
+        const userData = await fetchWithAuth("/users/me");
+        setApiUser(userData);
+
+        // Fetch rating & level from /api/users/me/stats
+        const statsData = await fetchWithAuth("/users/me/stats");
+        setApiStats(statsData);
+      } catch (err: any) {
+        console.error("Failed to load profile:", err);
+        setError(err.message || "Failed to connect to backend");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadBackendData();
+  }, []);
+
+  const initial = apiUser?.first_name ? apiUser.first_name.charAt(0).toUpperCase() : 'V';
 
   const menuItems = [
     { id: 'notifications', label: 'Notification Settings', icon: Bell, color: 'text-blue-500' },
@@ -33,7 +65,6 @@ export default function ProfilePage() {
     { id: 'about', label: 'Credentials & About', icon: Info, color: 'text-emerald-500' },
   ];
 
-  // Helper Toggle Component for the list
   const ToggleRow = ({ label, description, active, onClick }: any) => (
     <div className="flex items-center justify-between py-4 group cursor-pointer" onClick={onClick}>
       <div className="flex-1 pr-4">
@@ -46,32 +77,60 @@ export default function ProfilePage() {
     </div>
   );
 
+  // Show a loading spinner while fetching from FastAPI
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-500" />
+        <p>Syncing with Telegram...</p>
+      </div>
+    );
+  }
+
+  // Show error if backend is down or not authenticated
+  if (error || !apiUser) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+          <Info size={32} />
+        </div>
+        <p className="font-bold text-gray-800">Authentication Failed</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Are you opening this inside the Telegram App? ({error})
+        </p>
+      </div>
+    );
+  }
+
   return (
-    // ADDED ANIMATION CLASSES HERE
     <div className="py-3 space-y-6 animate-in fade-in duration-500">
       {/* Identity Card */}
       <div className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <div className="flex flex-col justify-center">
             <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight leading-tight">
-              {user?.first_name || "Guest"} {user?.last_name || ""}
+              {apiUser.first_name} {apiUser.last_name || ""}
             </h2>
-            {user?.username && (
+            {apiUser.username && (
               <button 
                 onClick={() => {
-                  navigator.clipboard.writeText(`@${user.username}`);
+                  navigator.clipboard.writeText(`@${apiUser.username}`);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
                 className="flex items-center gap-1.5 text-blue-600 font-semibold text-sm mt-1 bg-blue-50/50 px-2.5 py-1 rounded-lg w-fit active:scale-95 transition-transform"
               >
-                @{user.username}
+                @{apiUser.username}
                 {copied ? <Check size={14} /> : <Copy size={14} className="opacity-60" />}
               </button>
             )}
           </div>
           <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center border-4 border-zinc-50 shrink-0 overflow-hidden">
-            {user?.photo_url ? <img src={user.photo_url} className="w-full h-full object-cover" /> : <span className="text-blue-600 font-bold text-3xl">{initial}</span>}
+            {apiUser.photo_url ? (
+               <img src={apiUser.photo_url} className="w-full h-full object-cover" alt="Profile" /> 
+            ) : (
+               <span className="text-blue-600 font-bold text-3xl">{initial}</span>
+            )}
           </div>
         </div>
 
@@ -81,14 +140,18 @@ export default function ProfilePage() {
               <ShieldCheck size={16} className="mr-1.5" />
               <span className="text-[10px] uppercase font-black opacity-50">Level</span>
             </div>
-            <p className="font-bold">{level}</p>
+            {/* Populated from your /me/stats endpoint */}
+            <p className="font-bold">{apiStats?.verified_level || "Beginner"}</p>
           </div>
           <div className="bg-zinc-50 rounded-2xl p-4 border border-gray-100/50 text-center">
             <div className="flex items-center justify-center text-amber-500 mb-1">
               <Star size={16} className="mr-1.5 fill-amber-500" />
               <span className="text-[10px] uppercase font-black opacity-50">Behavior</span>
             </div>
-            <p className="font-bold">{rating} / 5.0</p>
+            {/* Formatted to 1 decimal place (e.g., 5.0) */}
+            <p className="font-bold">
+              {apiStats?.reliability_score?.toFixed(1) || "5.0"} / 5.0
+            </p>
           </div>
         </div>
       </div>
@@ -105,7 +168,9 @@ export default function ProfilePage() {
               onClick={() => setActiveView(item.id)}
               className="w-full flex items-center gap-4 px-6 py-5 transition-all active:bg-zinc-50 group text-left"
             >
-              <div className="p-2 rounded-xl bg-zinc-50 group-active:bg-white transition-colors"><item.icon size={20} className={item.color} /></div>
+              <div className="p-2 rounded-xl bg-zinc-50 group-active:bg-white transition-colors">
+                <item.icon size={20} className={item.color} />
+              </div>
               <span className="flex-1 text-[15px] font-semibold text-gray-700">{item.label}</span>
               <ChevronRight size={18} className="text-gray-300" />
             </button>
@@ -150,7 +215,6 @@ export default function ProfilePage() {
 
         {activeView === 'preferences' && (
           <div className="space-y-6">
-            {/* Development Role Selector */}
             <div>
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
                 Development Role Switch
@@ -177,7 +241,6 @@ export default function ProfilePage() {
           </div>
         )}
         
-        {/* Placeholder for other views */}
         {activeView === 'about' && (
           <div className="space-y-4 text-center">
             <div className="text-5xl mb-4">🏐</div>
