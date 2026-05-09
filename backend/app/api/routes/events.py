@@ -9,6 +9,9 @@ from app.db.database import get_session
 from app.db.models import Event, User, UserRole
 from app.core.security import get_current_user
 
+# Import our new RBAC dependency
+from app.api.deps import get_current_organizer 
+
 router = APIRouter()
 
 # --- Schemas ---
@@ -25,7 +28,6 @@ class EventCreate(BaseModel):
     revolut_tag: Optional[str] = None
     max_players: int
 
-# All fields are optional so the frontend only sends what actually changed
 class EventUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
@@ -45,22 +47,16 @@ class EventUpdate(BaseModel):
 @router.post("/", response_model=Event, status_code=status.HTTP_201_CREATED)
 def create_event(
     event_in: EventCreate,
-    current_user: User = Depends(get_current_user),
+    organizer: User = Depends(get_current_organizer), # <-- RBAC Dependency injected here!
     session: Session = Depends(get_session)
 ):
     """
     Create a new volleyball event. 
     Only users with the 'organizer' or 'admin' role can do this.
     """
-    if current_user.role not in [UserRole.ORGANIZER, UserRole.ADMIN]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="You must be an Organizer to create events."
-        )
-        
     new_event = Event(
         **event_in.model_dump(),
-        host_id=current_user.id,
+        host_id=organizer.id, # Use the organizer object directly
         status="Open"
     )
     
@@ -106,7 +102,7 @@ def update_event(
 
     # Business Logic: 24-Hour Edit Lock check
     now = datetime.utcnow()
-    # Strip timezone info if any for safe subtraction, depending on how your DB stores it
+    # Strip timezone info if any for safe subtraction
     time_until_start = event.start_time.replace(tzinfo=None) - now 
     
     if time_until_start < timedelta(hours=24):
@@ -136,7 +132,6 @@ def delete_event(
 ):
     """
     Permanently delete an event. Only the host or an admin can delete.
-    Alternatively, organizers can update the status to 'Cancelled' via the PATCH route.
     """
     event = session.get(Event, event_id)
     if not event:
