@@ -1,9 +1,9 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_BASE_URL = '/api';
 
 // Helper to safely extract Telegram authentication data
 const getTelegramInitData = () => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-        return window.Telegram.WebApp.initData;
+        return window.Telegram.WebApp.initData; // This contains the hash!
     }
     return '';
 };
@@ -15,11 +15,11 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
     const headers = {
         'Content-Type': 'application/json',
         'bypass-tunnel-reminder': 'true',
-        'x-telegram-init-data': initData,
+        'x-telegram-init-data': initData, // <-- THIS SENDS THE HASH TO FASTAPI
         ...options.headers,
     };
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`/api${endpoint}`, {
         ...options,
         headers,
     });
