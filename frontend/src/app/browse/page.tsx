@@ -103,41 +103,23 @@ export default function BrowsePage() {
     };
 
     // Live API RSVP
-    const handleRsvp = async (gameId: string, currentPlayers: number, maxPlayers: number) => {
-        try {
-            // Determine if they should go to the waitlist or confirmed
-            const status = currentPlayers >= maxPlayers ? 'waitlisted' : 'confirmed';
+    const handleRsvp = async (gameId: string) => {
+    try {
+        await api.joinEvent(gameId); // Calls /api/rsvps/{id}/join
+        loadEvents(); // Refresh UI
+    } catch (error) {
+        console.error("RSVP failed:", error);
+    }
+};
 
-            await api.rsvpToEvent(gameId, status);
-
-            if (window.Telegram?.WebApp?.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-            }
-
-            // Refresh feed to show "Joined"
-            loadEvents();
-        } catch (error) {
-            console.error("RSVP failed:", error);
-            alert("Could not RSVP to this match.");
-        }
-    };
-
-    // Live API Cancel RSVP
-    const handleCancelRsvp = async (gameId: string) => {
-        try {
-            await api.rsvpToEvent(gameId, 'cancelled');
-
-            if (window.Telegram?.WebApp?.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-            }
-
-            // Refresh feed to remove "Joined" tag
-            loadEvents();
-        } catch (error) {
-            console.error("Cancel failed:", error);
-            alert("Could not cancel RSVP.");
-        }
-    };
+const handleCancelRsvp = async (gameId: string) => {
+    try {
+        await api.leaveEvent(gameId); // Calls /api/rsvps/{id}/leave
+        loadEvents(); // Refresh UI
+    } catch (error) {
+        console.error("Cancel failed:", error);
+    }
+};
 
     return (
         <div className="py-3 space-y-4 animate-in fade-in duration-500 pb-24">

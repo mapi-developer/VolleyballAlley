@@ -91,3 +91,17 @@ async def kick_player(
         await promote_next_on_waitlist(event_id, session)
 
     return {"detail": "Player removed"}
+
+@router.get("/me", response_model=List[EventReadWithAttendees])
+async def get_my_rsvps(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Fetches all events the authenticated user is registered for."""
+    statement = (
+        select(Event)
+        .join(RSVP)
+        .where(RSVP.user_id == current_user.id)
+        .options(selectinload(Event.attendees))
+    )
+    return session.exec(statement).all()

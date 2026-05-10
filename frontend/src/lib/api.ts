@@ -46,7 +46,12 @@ export const api = {
     deleteEvent: (id: number) => fetchApi(`/events/${id}`, { method: 'DELETE' }),
 
     // --- RSVPS ---
-    rsvpToEvent: (eventId: number, status: 'confirmed' | 'waitlisted' | 'cancelled') =>
-        fetchApi(`/rsvps/?event_id=${eventId}&status=${status}`, { method: 'POST' }),
-    getMyGames: () => fetchApi('/rsvps/me'),
+    joinEvent: (eventId: string) => 
+        fetchApi(`/rsvps/${eventId}/join`, { method: 'POST' }),
+        
+    leaveEvent: (eventId: string) => 
+        fetchApi(`/rsvps/${eventId}/leave`, { method: 'DELETE' }),
+        
+    getMyGames: () => 
+        fetchApi('/rsvps/me'),
 };
