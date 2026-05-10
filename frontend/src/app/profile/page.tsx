@@ -3,15 +3,16 @@
 import { useUser } from "@/context/UserContext";
 import { 
   Star, ShieldCheck, Copy, Check, Bell, 
-  Settings, Info, ChevronRight 
+  Settings, Info, ChevronRight, Loader2
 } from "lucide-react";
 import { useState } from "react";
 import BottomSheet from "@/components/BottomSheet";
 
 export default function ProfilePage() {
-  const { user, rating, level, role, setRole } = useUser();
+  const { user, rating, level, role, setRole, isLoading } = useUser();
   const [copied, setCopied] = useState(false);
   const [activeView, setActiveView] = useState<string | null>(null);
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
   // Notification State - Hardcoded for now
   const [notifications, setNotifications] = useState({
@@ -25,7 +26,22 @@ export default function ProfilePage() {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : 'V';
+  const handleRoleChange = async (r: 'member' | 'organizer' | 'admin') => {
+    setIsUpdatingRole(true);
+    await setRole(r);
+    setIsUpdatingRole(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <Loader2 className="animate-spin mb-4 text-blue-500" size={32} />
+        <p>Loading Profile...</p>
+      </div>
+    );
+  }
+
+  const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : '';
 
   const menuItems = [
     { id: 'notifications', label: 'Notification Settings', icon: Bell, color: 'text-blue-500' },
@@ -33,7 +49,7 @@ export default function ProfilePage() {
     { id: 'about', label: 'Credentials & About', icon: Info, color: 'text-emerald-500' },
   ];
 
-  // Helper Toggle Component for the list
+  // Helper Toggle Component
   const ToggleRow = ({ label, description, active, onClick }: any) => (
     <div className="flex items-center justify-between py-4 group cursor-pointer" onClick={onClick}>
       <div className="flex-1 pr-4">
@@ -47,7 +63,6 @@ export default function ProfilePage() {
   );
 
   return (
-    // ADDED ANIMATION CLASSES HERE
     <div className="py-3 space-y-6 animate-in fade-in duration-500">
       {/* Identity Card */}
       <div className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100">
@@ -121,49 +136,30 @@ export default function ProfilePage() {
       >
         {activeView === 'notifications' && (
           <div className="space-y-1 divide-y divide-gray-50">
-            <ToggleRow 
-              label="New Games Alerts" 
-              description="Be the first to know when a new court is booked." 
-              active={notifications.newEvents}
-              onClick={() => toggleSetting('newEvents')}
-            />
-            <ToggleRow 
-              label="Waitlist Updates" 
-              description="Get a DM when you are promoted from the waitlist." 
-              active={notifications.waitlist}
-              onClick={() => toggleSetting('waitlist')}
-            />
-            <ToggleRow 
-              label="Game Reminders" 
-              description="We will send a reminder 2 hours before the whistle." 
-              active={notifications.reminders}
-              onClick={() => toggleSetting('reminders')}
-            />
-            <ToggleRow 
-              label="Administrative" 
-              description="System updates and community announcements." 
-              active={notifications.marketing}
-              onClick={() => toggleSetting('marketing')}
-            />
+            {/* Same toggles as before */}
+            <ToggleRow label="New Games Alerts" description="Be the first to know when a new court is booked." active={notifications.newEvents} onClick={() => toggleSetting('newEvents')}/>
+            <ToggleRow label="Waitlist Updates" description="Get a DM when you are promoted from the waitlist." active={notifications.waitlist} onClick={() => toggleSetting('waitlist')}/>
+            <ToggleRow label="Game Reminders" description="We will send a reminder 2 hours before the whistle." active={notifications.reminders} onClick={() => toggleSetting('reminders')}/>
+            <ToggleRow label="Administrative" description="System updates and community announcements." active={notifications.marketing} onClick={() => toggleSetting('marketing')}/>
           </div>
         )}
 
         {activeView === 'preferences' && (
           <div className="space-y-6">
-            {/* Development Role Selector */}
             <div>
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
-                Development Role Switch
+                Role Management (Live Sync)
               </p>
-              <div className="flex p-1 bg-zinc-100 rounded-2xl">
+              <div className="flex p-1 bg-zinc-100 rounded-2xl opacity-100 transition-opacity">
                 {(['member', 'organizer', 'admin'] as const).map((r) => (
                   <button
                     key={r}
-                    onClick={() => setRole(r)}
+                    disabled={isUpdatingRole}
+                    onClick={() => handleRoleChange(r)}
                     className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
                       role === r 
                         ? 'bg-white text-blue-600 shadow-sm' 
-                        : 'text-gray-400 active:text-gray-600'
+                        : 'text-gray-400 active:text-gray-600 disabled:opacity-50'
                     }`}
                   >
                     {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -171,13 +167,12 @@ export default function ProfilePage() {
                 ))}
               </div>
               <p className="text-[10px] text-gray-400 mt-3 italic leading-relaxed px-1">
-                Note: This switch is for UI development only. Changing to "Organizer" or "Admin" will unlock the Host tab in the footer.
+                Note: This change syncs with the FastAPI database immediately.
               </p>
             </div>
           </div>
         )}
         
-        {/* Placeholder for other views */}
         {activeView === 'about' && (
           <div className="space-y-4 text-center">
             <div className="text-5xl mb-4">🏐</div>
