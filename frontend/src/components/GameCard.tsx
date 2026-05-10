@@ -20,6 +20,7 @@ export interface Game {
   location: string;
   revolutTag?: string;
   isJoined?: boolean;
+  isHost?: boolean; 
 }
 
 interface GameCardProps {
@@ -102,7 +103,14 @@ export default function GameCard({
         </button>
       </div>
 
-      {game.isJoined ? (
+      {game.isHost ? (
+        <button 
+          disabled
+          className="w-full py-3.5 rounded-xl font-bold text-[15px] bg-zinc-100 text-gray-400 cursor-not-allowed"
+        >
+          You're the Host
+        </button>
+      ) : game.isJoined ? (
         <button 
           onClick={(e) => handleAction(e, onCancelClick || (() => {}))} 
           className="w-full bg-rose-50 text-rose-600 py-3.5 rounded-xl font-bold text-[15px] active:scale-95 transition-transform"
@@ -114,7 +122,7 @@ export default function GameCard({
           onClick={(e) => handleAction(e, onRsvpClick)} 
           disabled={isFull} 
           className={`w-full py-3.5 rounded-xl font-bold text-[15px] active:scale-95 transition-transform ${
-            isFull ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white shadow-md shadow-blue-200'
+            isFull ? 'bg-zinc-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white shadow-md shadow-blue-200'
           }`}
         >
           {isFull ? 'Waitlist Full' : 'RSVP Now'}
