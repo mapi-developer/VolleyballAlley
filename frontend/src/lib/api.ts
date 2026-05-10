@@ -36,7 +36,7 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
 export const api = {
     // --- USERS ---
     getCurrentUser: () => fetchApi('/users/me'),
-    updateRole: (role: string) => fetchApi(`/users/me/role?role=${role}`, { method: 'PUT' }),
+    updateRole: (role: string) => fetchApi(`/users/me/role?new_role=${role}`, { method: 'PATCH' }),
 
     // --- EVENTS ---
     getEvents: () => fetchApi('/events/'),

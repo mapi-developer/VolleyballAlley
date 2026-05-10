@@ -1,8 +1,8 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
-import { 
-  Star, ShieldCheck, Copy, Check, Bell, 
+import {
+  Star, ShieldCheck, Copy, Check, Bell,
   Settings, Info, ChevronRight, Loader2
 } from "lucide-react";
 import { useState } from "react";
@@ -27,9 +27,21 @@ export default function ProfilePage() {
   };
 
   const handleRoleChange = async (r: 'member' | 'organizer' | 'admin') => {
-    setIsUpdatingRole(true);
-    await setRole(r);
-    setIsUpdatingRole(false);
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+    try {
+      setIsUpdatingRole(true);
+
+      await setRole(r);
+
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    } catch (error) {
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+      console.error("Role update failed:", error);
+    } finally {
+      setIsUpdatingRole(false);
+    }
   };
 
   if (isLoading) {
@@ -72,7 +84,7 @@ export default function ProfilePage() {
               {user?.first_name || "Guest"} {user?.last_name || ""}
             </h2>
             {user?.username && (
-              <button 
+              <button
                 onClick={() => {
                   navigator.clipboard.writeText(`@${user.username}`);
                   setCopied(true);
@@ -115,8 +127,8 @@ export default function ProfilePage() {
         </div>
         <div className="divide-y divide-gray-50">
           {menuItems.map((item) => (
-            <button 
-              key={item.id} 
+            <button
+              key={item.id}
               onClick={() => setActiveView(item.id)}
               className="w-full flex items-center gap-4 px-6 py-5 transition-all active:bg-zinc-50 group text-left"
             >
@@ -129,50 +141,55 @@ export default function ProfilePage() {
       </div>
 
       {/* Popups Content */}
-      <BottomSheet 
-        isOpen={activeView !== null} 
+      <BottomSheet
+        isOpen={activeView !== null}
         onClose={() => setActiveView(null)}
         title={menuItems.find(i => i.id === activeView)?.label || ""}
       >
         {activeView === 'notifications' && (
           <div className="space-y-1 divide-y divide-gray-50">
             {/* Same toggles as before */}
-            <ToggleRow label="New Games Alerts" description="Be the first to know when a new court is booked." active={notifications.newEvents} onClick={() => toggleSetting('newEvents')}/>
-            <ToggleRow label="Waitlist Updates" description="Get a DM when you are promoted from the waitlist." active={notifications.waitlist} onClick={() => toggleSetting('waitlist')}/>
-            <ToggleRow label="Game Reminders" description="We will send a reminder 2 hours before the whistle." active={notifications.reminders} onClick={() => toggleSetting('reminders')}/>
-            <ToggleRow label="Administrative" description="System updates and community announcements." active={notifications.marketing} onClick={() => toggleSetting('marketing')}/>
+            <ToggleRow label="New Games Alerts" description="Be the first to know when a new court is booked." active={notifications.newEvents} onClick={() => toggleSetting('newEvents')} />
+            <ToggleRow label="Waitlist Updates" description="Get a DM when you are promoted from the waitlist." active={notifications.waitlist} onClick={() => toggleSetting('waitlist')} />
+            <ToggleRow label="Game Reminders" description="We will send a reminder 2 hours before the whistle." active={notifications.reminders} onClick={() => toggleSetting('reminders')} />
+            <ToggleRow label="Administrative" description="System updates and community announcements." active={notifications.marketing} onClick={() => toggleSetting('marketing')} />
           </div>
         )}
 
         {activeView === 'preferences' && (
           <div className="space-y-6">
+            {/* Role Management Section inside the Preferences BottomSheet */}
             <div>
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
                 Role Management (Live Sync)
               </p>
-              <div className="flex p-1 bg-zinc-100 rounded-2xl opacity-100 transition-opacity">
-                {(['member', 'organizer', 'admin'] as const).map((r) => (
-                  <button
-                    key={r}
-                    disabled={isUpdatingRole}
-                    onClick={() => handleRoleChange(r)}
-                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
-                      role === r 
-                        ? 'bg-white text-blue-600 shadow-sm' 
-                        : 'text-gray-400 active:text-gray-600 disabled:opacity-50'
-                    }`}
-                  >
-                    {r.charAt(0).toUpperCase() + r.slice(1)}
-                  </button>
-                ))}
+              <div className={`flex p-1 bg-zinc-100 rounded-2xl transition-opacity duration-200 ${isUpdatingRole ? 'opacity-60' : 'opacity-100'}`}>
+                {(['member', 'organizer', 'admin'] as const).map((r) => {
+                  const isActive = role === r;
+                  return (
+                    <button
+                      key={r}
+                      disabled={isUpdatingRole || isActive} // Disable if updating or if already active
+                      onClick={() => handleRoleChange(r)}
+                      className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${isActive
+                          ? 'bg-white text-blue-600 shadow-sm'
+                          : 'text-gray-400 active:bg-zinc-200/50'
+                        }`}
+                    >
+                      {/* Show a mini spinner on the button being clicked */}
+                      {isUpdatingRole && !isActive && <Loader2 size={12} className="animate-spin" />}
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </button>
+                  );
+                })}
               </div>
               <p className="text-[10px] text-gray-400 mt-3 italic leading-relaxed px-1">
-                Note: This change syncs with the FastAPI database immediately.
+                Note: Your role determines access to the Host and Admin dashboards.
               </p>
             </div>
           </div>
         )}
-        
+
         {activeView === 'about' && (
           <div className="space-y-4 text-center">
             <div className="text-5xl mb-4">🏐</div>
