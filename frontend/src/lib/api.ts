@@ -42,6 +42,7 @@ export const api = {
     getEvents: () => fetchApi('/events/'),
     getEventById: (id: number) => fetchApi(`/events/${id}`),
     createEvent: (data: any) => fetchApi('/events/', { method: 'POST', body: JSON.stringify(data) }),
+    updateEvent: (id: string, data: any) => fetchApi(`/events/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     deleteEvent: (id: number) => fetchApi(`/events/${id}`, { method: 'DELETE' }),
 
     // --- RSVPS ---

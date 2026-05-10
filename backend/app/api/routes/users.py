@@ -23,9 +23,7 @@ async def get_my_stats(
     
     return {
         "games_count": len(games_played),
-        # FIXED: "reliability" -> "reliability_score" (Matches turn 21 ProfilePage)
         "reliability_score": current_user.reliability_score, 
-        # FIXED: "level" -> "verified_level" (Matches turn 21 ProfilePage)
         "verified_level": current_user.verified_level 
     }
 
