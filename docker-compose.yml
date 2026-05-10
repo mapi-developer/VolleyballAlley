@@ -12,6 +12,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - volleyball_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d volleyball_alley"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
@@ -20,7 +25,8 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/volleyball_alley
       - BOT_TOKEN=${BOT_TOKEN}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - volleyball_net
 
@@ -28,7 +34,6 @@ services:
     build: ./frontend
     container_name: volleyball_frontend
     environment:
-      # Use a relative path so the browser calls the same domain it's on
       - NEXT_PUBLIC_API_URL=/api
     networks:
       - volleyball_net

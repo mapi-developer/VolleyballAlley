@@ -168,7 +168,7 @@ const handleCancelRsvp = async (gameId: string) => {
                             onClick={() => setSelectedGame(game)}
                             onMapClick={handleMapClick}
                             onPayClick={handlePayClick}
-                            onRsvpClick={() => handleRsvp(game.id, game.currentPlayers, game.maxPlayers)}
+                            onRsvpClick={() => handleRsvp(game.id)}
                             onCancelClick={() => handleCancelRsvp(game.id)}
                         />
                     ))
@@ -263,7 +263,7 @@ const handleCancelRsvp = async (gameId: string) => {
                                 </button>
                             ) : (
                                 <button
-                                    onClick={() => handleRsvp(selectedGame.id, selectedGame.currentPlayers, selectedGame.maxPlayers)}
+                                    onClick={() => handleRsvp(selectedGame.id)}
                                     disabled={selectedGame.currentPlayers >= selectedGame.maxPlayers}
                                     className={`w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all ${selectedGame.currentPlayers >= selectedGame.maxPlayers
                                             ? 'bg-zinc-100 text-gray-400 cursor-not-allowed shadow-none'
