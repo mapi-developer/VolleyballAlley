@@ -1,50 +1,69 @@
-'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+"use client";
 
-// 1. Create the Context
-export const UserContext = createContext<any>(null);
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-// 2. The Provider Component
-export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export type UserRole = 'member' | 'organizer' | 'admin';
+
+interface UserContextType {
+  user: any;
+  rating: number;
+  level: string;
+  role: UserRole;
+  setRole: (role: UserRole) => void;
+  // ADDED THESE TO INTERFACE
+  footerVisible: boolean;
+  setFooterVisible: (visible: boolean) => void;
+}
+
+const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export const UserProvider = ({ 
+  children, 
+  initialRole, 
+  initialUser 
+}: { 
+  children: React.ReactNode, 
+  initialRole: UserRole,
+  initialUser: any 
+}) => {
+  const [user, setUser] = useState<any>(initialUser);
+  const [role, setRoleState] = useState<UserRole>(initialRole);
+  const [footerVisible, setFooterVisible] = useState(true);
+  
+  const [rating] = useState(4.8);
+  const [level] = useState("Intermediate+");
 
   useEffect(() => {
-    async function initApp() {
-      try {
-        // Signal to Telegram that the app is ready
-        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-          window.Telegram.WebApp.ready();
-          window.Telegram.WebApp.expand();
-        }
-
-        // Fetch or auto-register user profile in backend
-        const profile = await api.getProfile();
-        setUser(profile);
-      } catch (err) {
-        console.error("Failed to sync user with backend:", err);
-      } finally {
-        setLoading(false);
-      }
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.initDataUnsafe?.user) {
+      const telegramUser = tg.initDataUnsafe.user;
+      setUser(telegramUser);
+      
+      const cookieData = {
+        first_name: telegramUser.first_name,
+        photo_url: telegramUser.photo_url
+      };
+      document.cookie = `user-data=${encodeURIComponent(JSON.stringify(cookieData))}; path=/; max-age=31536000`;
     }
-
-    initApp();
   }, []);
 
+  const setRole = (newRole: UserRole) => {
+    setRoleState(newRole);
+    document.cookie = `dev-role=${newRole}; path=/; max-age=31536000`;
+  };
+
   return (
-    <UserContext.Provider value={{ user, setUser, loading }}>
+    <UserContext.Provider value={{ 
+      user, rating, level, role, setRole, 
+      footerVisible, setFooterVisible 
+    }}>
       {children}
     </UserContext.Provider>
   );
-}
+};
 
-// 3. THE MISSING PIECE: Export the custom hook
-// This allows components to use: const { user } = useUser();
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (!context) {
-    throw new Error("useUser must be used within a UserProvider");
-  }
+  if (!context) throw new Error("useUser must be used within UserProvider");
   return context;
 };

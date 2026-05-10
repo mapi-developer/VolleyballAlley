@@ -16,14 +16,17 @@ async def get_my_stats(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
+    """Calculates stats. Keys now exactly match frontend ProfilePage expectations."""
     games_played = session.exec(
         select(RSVP).where(RSVP.user_id == current_user.id, RSVP.attended == True)
     ).all()
     
     return {
         "games_count": len(games_played),
-        "reliability_score": current_user.reliability_score, # Matches frontend
-        "verified_level": current_user.verified_level      # Matches frontend
+        # FIXED: "reliability" -> "reliability_score" (Matches turn 21 ProfilePage)
+        "reliability_score": current_user.reliability_score, 
+        # FIXED: "level" -> "verified_level" (Matches turn 21 ProfilePage)
+        "verified_level": current_user.verified_level 
     }
 
 @router.patch("/me/role")
@@ -32,12 +35,12 @@ async def update_my_role(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Allows self-switching roles for development/MVP purposes."""
+    """Allows development role switching."""
     current_user.role = new_role
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
-    return {"detail": f"Role updated to {new_role}", "role": current_user.role}
+    return {"detail": f"Role updated", "role": current_user.role}
 
 @router.patch("/{user_id}/role")
 async def update_user_role(

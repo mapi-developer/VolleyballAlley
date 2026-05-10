@@ -9,22 +9,25 @@ from app.db.database import get_session
 from app.db.models import User, UserRole
 
 def validate_telegram_data(init_data: str) -> dict:
-    """Verifies HMAC-SHA256 signature of Telegram initData."""
     try:
         parsed_data = parse_qs(init_data)
         auth_hash = parsed_data.pop('hash', [None])[0]
         
+        # Telegram requires sorting keys alphabetically for validation
         data_check_string = "\n".join([f"{k}={v[0]}" for k in sorted(parsed_data.keys())])
         
         secret_key = hmac.new(b"WebAppData", settings.BOT_TOKEN.encode(), hashlib.sha256).digest()
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
         
         if calculated_hash != auth_hash:
-            raise HTTPException(status_code=401, detail="Invalid Telegram data")
+            # This logs the specific failure to your backend terminal
+            print(f"DEBUG: Hash mismatch. Calc: {calculated_hash} != Recv: {auth_hash}")
+            raise HTTPException(status_code=401, detail="Invalid signature")
             
         return {k: v[0] for k, v in parsed_data.items()}
-    except Exception:
-        raise HTTPException(status_code=401, detail="Authentication failed")
+    except Exception as e:
+        print(f"DEBUG: Auth Error: {str(e)}") # SEE THE REAL ERROR HERE
+        raise HTTPException(status_code=401, detail=f"Auth failed: {str(e)}")
 
 def get_current_user(
     x_telegram_init_data: str = Header(...), 
