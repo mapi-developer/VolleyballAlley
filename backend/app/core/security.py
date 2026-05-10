@@ -10,17 +10,22 @@ from app.db.models import User, UserRole
 
 def validate_telegram_data(init_data: str) -> dict:
     try:
+        # 1. Use keep_blank_values=True and handle the list unpacking manually
         parsed_data = parse_qs(init_data)
-        auth_hash = parsed_data.pop('hash', [None])[0]
+        if 'hash' not in parsed_data:
+            raise HTTPException(status_code=401, detail="Hash missing")
+            
+        auth_hash = parsed_data.pop('hash')[0]
         
-        # Telegram requires sorting keys alphabetically for validation
-        data_check_string = "\n".join([f"{k}={v}" for k, v in sorted(parsed_data.items()) if k != "hash"])
+        # 2. Build the string using the first element of each list (the actual raw string)
+        # Telegram expects: key1=value1\nkey2=value2
+        items = sorted([f"{k}={v[0]}" for k, v in parsed_data.items()])
+        data_check_string = "\n".join(items)
         
         secret_key = hmac.new(b"WebAppData", settings.BOT_TOKEN.encode(), hashlib.sha256).digest()
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
         
         if calculated_hash != auth_hash:
-            # This logs the specific failure to your backend terminal
             print(f"DEBUG: Hash mismatch. Calc: {calculated_hash} != Recv: {auth_hash}")
             raise HTTPException(status_code=401, detail="Invalid signature")
             
