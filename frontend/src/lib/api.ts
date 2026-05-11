@@ -2,8 +2,17 @@ const API_BASE_URL = '/api';
 
 // Helper to safely extract Telegram authentication data
 const getTelegramInitData = () => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-        return window.Telegram.WebApp.initData; // This contains the hash!
+    // 1. Check if we are in the browser (not Server-Side Rendering)
+    if (typeof window !== 'undefined') {
+        // 2. Force cast to 'any' to ensure TypeScript doesn't strip it
+        const tg = (window as any).Telegram;
+        
+        // 3. Check if the SDK and initData exist
+        if (tg && tg.WebApp && tg.WebApp.initData) {
+            return tg.WebApp.initData;
+        } else {
+            console.warn("Telegram WebApp SDK found, but initData is empty. Are you testing in a normal browser?");
+        }
     }
     return '';
 };
