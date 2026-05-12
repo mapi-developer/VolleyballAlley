@@ -3,7 +3,8 @@
 import { useUser } from "@/context/UserContext";
 import {
   Star, ShieldCheck, Copy, Check, Bell,
-  Settings, Info, ChevronRight, Loader2
+  Settings, Info, ChevronRight, Loader2,
+  CreditCard, MessageSquarePlus
 } from "lucide-react";
 import { useState } from "react";
 import BottomSheet from "@/components/BottomSheet";
@@ -14,7 +15,10 @@ export default function ProfilePage() {
   const [activeView, setActiveView] = useState<string | null>(null);
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
-  // Notification State - Hardcoded for now
+  // Profile Preferences State
+  const [revolutTag, setRevolutTag] = useState(user?.revolut_tag || "");
+
+  // Notification State - Hardcoded for now, tie to API later
   const [notifications, setNotifications] = useState({
     newEvents: true,
     waitlist: true,
@@ -32,9 +36,7 @@ export default function ProfilePage() {
 
     try {
       setIsUpdatingRole(true);
-
       await setRole(r);
-
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
     } catch (error) {
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
@@ -55,9 +57,11 @@ export default function ProfilePage() {
 
   const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : '';
 
+  // Updated Menu to strictly match specs
   const menuItems = [
     { id: 'notifications', label: 'Notification Settings', icon: Bell, color: 'text-blue-500' },
     { id: 'preferences', label: 'App Preferences', icon: Settings, color: 'text-gray-500' },
+    { id: 'support', label: 'Support & Review', icon: MessageSquarePlus, color: 'text-amber-500' },
     { id: 'about', label: 'Credentials & About', icon: Info, color: 'text-emerald-500' },
   ];
 
@@ -75,7 +79,7 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="py-3 space-y-6 animate-in fade-in duration-500">
+    <div className="py-3 space-y-6 animate-in fade-in duration-500 pb-24">
       {/* Identity Card */}
       <div className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
@@ -98,7 +102,7 @@ export default function ProfilePage() {
             )}
           </div>
           <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center border-4 border-zinc-50 shrink-0 overflow-hidden">
-            {user?.photo_url ? <img src={user.photo_url} className="w-full h-full object-cover" /> : <span className="text-blue-600 font-bold text-3xl">{initial}</span>}
+            {user?.photo_url ? <img src={user.photo_url} className="w-full h-full object-cover" alt="Avatar" /> : <span className="text-blue-600 font-bold text-3xl">{initial}</span>}
           </div>
         </div>
 
@@ -108,14 +112,14 @@ export default function ProfilePage() {
               <ShieldCheck size={16} className="mr-1.5" />
               <span className="text-[10px] uppercase font-black opacity-50">Level</span>
             </div>
-            <p className="font-bold">{level}</p>
+            <p className="font-bold text-gray-900">{level}</p>
           </div>
           <div className="bg-zinc-50 rounded-2xl p-4 border border-gray-100/50 text-center">
             <div className="flex items-center justify-center text-amber-500 mb-1">
               <Star size={16} className="mr-1.5 fill-amber-500" />
               <span className="text-[10px] uppercase font-black opacity-50">Behavior</span>
             </div>
-            <p className="font-bold">{rating} / 5.0</p>
+            <p className="font-bold text-gray-900">{rating} / 5.0</p>
           </div>
         </div>
       </div>
@@ -123,7 +127,7 @@ export default function ProfilePage() {
       {/* Main Menu List */}
       <div className="bg-white rounded-[32px] overflow-hidden border border-gray-100 shadow-sm">
         <div className="px-6 py-4 border-b border-gray-50 bg-zinc-50/50 text-[11px] font-black text-gray-400 uppercase tracking-widest">
-          Account Preferences
+          Account Settings
         </div>
         <div className="divide-y divide-gray-50">
           {menuItems.map((item) => (
@@ -132,7 +136,9 @@ export default function ProfilePage() {
               onClick={() => setActiveView(item.id)}
               className="w-full flex items-center gap-4 px-6 py-5 transition-all active:bg-zinc-50 group text-left"
             >
-              <div className="p-2 rounded-xl bg-zinc-50 group-active:bg-white transition-colors"><item.icon size={20} className={item.color} /></div>
+              <div className="p-2 rounded-xl bg-zinc-50 group-active:bg-white transition-colors">
+                <item.icon size={20} className={item.color} />
+              </div>
               <span className="flex-1 text-[15px] font-semibold text-gray-700">{item.label}</span>
               <ChevronRight size={18} className="text-gray-300" />
             </button>
@@ -147,8 +153,7 @@ export default function ProfilePage() {
         title={menuItems.find(i => i.id === activeView)?.label || ""}
       >
         {activeView === 'notifications' && (
-          <div className="space-y-1 divide-y divide-gray-50">
-            {/* Same toggles as before */}
+          <div className="space-y-1 divide-y divide-gray-50 pb-6">
             <ToggleRow label="New Games Alerts" description="Be the first to know when a new court is booked." active={notifications.newEvents} onClick={() => toggleSetting('newEvents')} />
             <ToggleRow label="Waitlist Updates" description="Get a DM when you are promoted from the waitlist." active={notifications.waitlist} onClick={() => toggleSetting('waitlist')} />
             <ToggleRow label="Game Reminders" description="We will send a reminder 2 hours before the whistle." active={notifications.reminders} onClick={() => toggleSetting('reminders')} />
@@ -157,8 +162,8 @@ export default function ProfilePage() {
         )}
 
         {activeView === 'preferences' && (
-          <div className="space-y-6">
-            {/* Role Management Section inside the Preferences BottomSheet */}
+          <div className="space-y-6 pb-6">
+            {/* Role Management Section */}
             <div>
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
                 Role Management (Live Sync)
@@ -169,14 +174,13 @@ export default function ProfilePage() {
                   return (
                     <button
                       key={r}
-                      disabled={isUpdatingRole || isActive} // Disable if updating or if already active
+                      disabled={isUpdatingRole || isActive}
                       onClick={() => handleRoleChange(r)}
                       className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${isActive
                           ? 'bg-white text-blue-600 shadow-sm'
-                          : 'text-gray-400 active:bg-zinc-200/50'
+                          : 'text-gray-400 hover:text-gray-600 active:bg-zinc-200/50'
                         }`}
                     >
-                      {/* Show a mini spinner on the button being clicked */}
                       {isUpdatingRole && !isActive && <Loader2 size={12} className="animate-spin" />}
                       {r.charAt(0).toUpperCase() + r.slice(1)}
                     </button>
@@ -187,17 +191,61 @@ export default function ProfilePage() {
                 Note: Your role determines access to the Host and Admin dashboards.
               </p>
             </div>
+
+            {/* Revolut Tag Setup Block */}
+            <div className="pt-6 border-t border-gray-100">
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
+                Payment Preferences
+              </p>
+              <div className="bg-zinc-50 p-4 rounded-2xl border border-gray-100/50">
+                <label className="flex items-center text-sm font-bold text-gray-700 mb-2">
+                  <CreditCard size={16} className="mr-2 text-blue-500" /> Revolut Tag (Autofill)
+                </label>
+                <input
+                  type="text"
+                  placeholder="@yourtag"
+                  value={revolutTag}
+                  onChange={(e) => setRevolutTag(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium"
+                />
+                <p className="text-[10px] text-gray-400 mt-2 font-medium leading-relaxed">
+                  Saved automatically. We'll use this to pre-fill the payment link when you host new matches.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeView === 'support' && (
+          <div className="space-y-3 pb-6">
+            <button className="w-full flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-gray-100/50 active:scale-95 transition-all group">
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-gray-800 text-sm">Chat with Support</span>
+                <span className="text-xs text-gray-400 font-medium mt-0.5">Reach out via Telegram DM</span>
+              </div>
+              <MessageSquarePlus size={20} className="text-blue-500 group-active:scale-110 transition-transform" />
+            </button>
+            
+            <button className="w-full flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-gray-100/50 active:scale-95 transition-all group">
+              <div className="flex flex-col text-left">
+                <span className="font-bold text-gray-800 text-sm">Leave Feedback</span>
+                <span className="text-xs text-gray-400 font-medium mt-0.5">Help us improve the app</span>
+              </div>
+              <Star size={20} className="text-amber-500 group-active:scale-110 transition-transform" />
+            </button>
           </div>
         )}
 
         {activeView === 'about' && (
-          <div className="space-y-4 text-center">
-            <div className="text-5xl mb-4">🏐</div>
-            <h4 className="font-bold text-xl">VolleyballAlley</h4>
-            <p className="text-sm text-gray-500 px-4 leading-relaxed">
+          <div className="space-y-4 text-center pb-6">
+            <div className="text-5xl mb-4 drop-shadow-sm">🏐</div>
+            <h4 className="font-black text-2xl text-gray-900">VolleyballAlley</h4>
+            <p className="text-sm text-gray-500 px-4 leading-relaxed font-medium">
               Crafted for players by players. Our goal is to simplify match organization so you can focus on the game.
             </p>
-            <div className="text-[10px] text-gray-300 uppercase tracking-widest pt-4">Version 1.0.0-beta</div>
+            <div className="text-[10px] text-gray-300 uppercase font-black tracking-widest pt-4">
+              Version 1.0.0-beta
+            </div>
           </div>
         )}
       </BottomSheet>

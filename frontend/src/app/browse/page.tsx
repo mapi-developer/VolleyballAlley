@@ -5,7 +5,7 @@ import {
     Search, Info, Calendar, MapPin,
     Users, Banknote, Clock, ExternalLink, Map as MapIcon, Loader2
 } from 'lucide-react';
-import GameCard, { Game } from '@/components/GameCard';
+import GameCard, { Game } from '@/components/EventCard';
 import BottomSheet from '@/components/BottomSheet';
 import { useUser } from '@/context/UserContext';
 import { api } from '@/lib/api';
@@ -30,13 +30,16 @@ export default function BrowsePage() {
             const mappedGames: Game[] = data.map((dbEvent: any) => {
                 const attendees = dbEvent.attendees || [];
                 const confirmed = attendees.filter((a: any) => a.status === 'confirmed');
-                const isJoined = attendees.some((a: any) => a.user_id === user?.id && a.status === 'confirmed');
+                
+                // NEW: Capture the exact registration object for the current user
+                const userRegistration = attendees.find((a: any) => a.user_id === user?.id);
+                
                 const isUserHost = dbEvent.host_id === user?.id; // Check host
 
                 const startDate = new Date(dbEvent.start_time);
                 const endDate = new Date(dbEvent.end_time || dbEvent.start_time); // Fallback if end_time is missing
 
-                // Simple heuristic for Indoor/Outdoor since it's not strictly in your EventBase yet
+                // Simple heuristic for Indoor/Outdoor
                 const isSand = dbEvent.location_name.toLowerCase().includes('sand') || dbEvent.location_name.toLowerCase().includes('beach');
 
                 return {
@@ -55,15 +58,18 @@ export default function BrowsePage() {
                     price: dbEvent.price === 0 ? "Free" : `${dbEvent.price} HUF`,
                     location: dbEvent.location_name,
                     revolutTag: dbEvent.revolut_tag || undefined,
-                    isJoined: !!isJoined,
-                    isHost: isUserHost // Pass it to the GameCard
+                    isHost: isUserHost,
+                    
+                    // NEW: Pass both boolean and the actual status for Waitlist tracking
+                    isJoined: !!userRegistration,
+                    rsvpStatus: userRegistration ? userRegistration.status : null 
                 };
             });
 
             // Sort by date ascending (closest events first)
             const sortedGames = mappedGames.sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
 
-            // Only show events that haven't already finished
+            // Only show events that haven't already finished (2 hour buffer)
             const upcomingGames = sortedGames.filter(g => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) > Date.now());
 
             setLiveGames(upcomingGames);
@@ -104,22 +110,22 @@ export default function BrowsePage() {
 
     // Live API RSVP
     const handleRsvp = async (gameId: string) => {
-    try {
-        await api.joinEvent(gameId); // Calls /api/rsvps/{id}/join
-        loadEvents(); // Refresh UI
-    } catch (error) {
-        console.error("RSVP failed:", error);
-    }
-};
+        try {
+            await api.joinEvent(gameId); // Calls /api/rsvps/{id}/join
+            loadEvents(); // Refresh UI silently
+        } catch (error) {
+            console.error("RSVP failed:", error);
+        }
+    };
 
-const handleCancelRsvp = async (gameId: string) => {
-    try {
-        await api.leaveEvent(gameId); // Calls /api/rsvps/{id}/leave
-        loadEvents(); // Refresh UI
-    } catch (error) {
-        console.error("Cancel failed:", error);
-    }
-};
+    const handleCancelRsvp = async (gameId: string) => {
+        try {
+            await api.leaveEvent(gameId); // Calls /api/rsvps/{id}/leave
+            loadEvents(); // Refresh UI silently
+        } catch (error) {
+            console.error("Cancel failed:", error);
+        }
+    };
 
     return (
         <div className="py-3 space-y-4 animate-in fade-in duration-500 pb-24">
@@ -259,18 +265,18 @@ const handleCancelRsvp = async (gameId: string) => {
                                     onClick={() => handleCancelRsvp(selectedGame.id)}
                                     className="w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all bg-rose-50 text-rose-600 shadow-rose-100"
                                 >
-                                    Cancel Registration
+                                    {selectedGame.rsvpStatus === 'waitlisted' ? 'Leave Waitlist' : 'Cancel Registration'}
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => handleRsvp(selectedGame.id)}
-                                    disabled={selectedGame.currentPlayers >= selectedGame.maxPlayers}
-                                    className={`w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all ${selectedGame.currentPlayers >= selectedGame.maxPlayers
-                                            ? 'bg-zinc-100 text-gray-400 cursor-not-allowed shadow-none'
+                                    className={`w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all ${
+                                        selectedGame.currentPlayers >= selectedGame.maxPlayers
+                                            ? 'bg-amber-500 text-white shadow-amber-100' 
                                             : 'bg-blue-600 text-white shadow-blue-100'
-                                        }`}
+                                    }`}
                                 >
-                                    {selectedGame.currentPlayers >= selectedGame.maxPlayers ? 'Waitlist Full' : 'RSVP Now'}
+                                    {selectedGame.currentPlayers >= selectedGame.maxPlayers ? 'Join Waitlist' : 'RSVP Now'}
                                 </button>
                             )}
                         </div>

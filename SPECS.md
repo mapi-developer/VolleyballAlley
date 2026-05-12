@@ -246,3 +246,191 @@ Behavior Ratings:
     ├── .env                      # Secrets (Bot Token, DB URL)
     ├── docker-compose.yml        # PostgreSQL container config
     └── requirements.txt          # Python dependencies
+
+
+FRONTEND Struct:
+
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── browse/page.tsx 
+│   │   ├── host/page.tsx 
+│   │   ├── my-games/page.tsx 
+│   │   ├── profile/page.tsx 
+│   │   ├── glovals.css 
+│   │   ├── layout.tsx 
+│   │   └── page.tsx 
+│   ├── components/
+│   │   ├── BottomSheet.tsx
+│   │   ├── CreateEventSheet.tsx
+│   │   ├── EditEventSheet.tsx
+│   │   ├── Footer.tsx
+│   │   ├── FormField.tsx
+│   │   ├── GameCard.tsx
+│   │   └── Header.tsx 
+│   ├── context/
+│   │   └── UserContext.tsx 
+│   ├── lib/
+│   │   └── api.ts 
+│   └── global.d.ts
+├── .env.local
+├── .gitignore
+├── Dockerfile
+├── next.config.js
+└── postcss.config.mjs
+
+By Page Description:
+
+Profile Page:
+ - Header (Page title, Profile avatar icon button)
+ - User Info Block (name, telegram tag, Profile photo, Level, Behavior rating)
+ - Account Preferences Block:
+    - Notifications Settings -> Toggles: (New Game Alerts, WAitlist Updates, Game Reminders, Administrative)
+    - App Preferences (Role change toggle (for developing only), Setup Revolut tag (for autofill when user creates event))
+    - Support & Review (Lead to Help & Feedback or App review popup)
+    - Credentials & About (General information about app, FAQ)
+ - Footer with page navigation buttons (Home, Browse, My Games, Profile [Additional Host Button for roles organizer and higher])
+
+Create Event Popup:
+ - Top bar (to close tab by touching this bar)
+ - Title "Create New Event" + close button
+ - Event Title and Player Level Block (Mandatory to fill):
+    - Pencil icon and "Event Title" | Player Level (one row)
+    - Input Field (for title) | dropdown option (All, Beginner, Intermediate, Advanced)
+ - Event Description (optional to fill):
+    - Description icon + "Description"
+    - input field (for description)
+  - Date and Max Players block:
+    - calendar icon + "Date" | players icon + "Max Players" (one row)
+    - datecalendar choose option | Input field for maximum players amount (one row)
+ - Time Slot block:
+    - clock icon + "Time Slot"
+    - time choose option | "to" | time choose option (one row)
+ - Location & Map block:
+    - map icon + "Location & Map link"
+    - input field 
+ - Event Fee and Player level requirements block:
+    - cash icon + "Event Fee" | shield icon + "Player Level" (one row)
+    - input field for fee (0 default [free]) | dropdown options (All levels, Beginner, Intermediate, Advanced) (one row)
+ - Revolut tag block:
+    - chain icon + "Revolut Tag"
+    - input field for tag (prefill if user set tag in App Preferences)
+ - Thin separator line
+ - Small reminder: "Host: {host Name}"
+ - Confirm & Launch Event button
+
+Edit Event Popup:
+ - Top bar (to close tab by touching this bar)
+ - Title "Manage Event" + close button
+ - Event Title and Player Level Block:
+    - Pencil icon and "Event Title" | Player Level (one row)
+    - Input Field (for title) | dropdown option (All, Beginner, Intermediate, Advanced)
+ - Event Description (optional to fill):
+    - Description icon + "Description"
+    - input field (for description)
+  - Date and Max Players block:
+    - calendar icon + "Date" | players icon + "Max Players" (one row)
+    - datecalendar choose option | Input field for maximum players amount (one row)
+ - Time Slot block:
+    - clock icon + "Time Slot"
+    - time choose option | "to" | time choose option (one row)
+ - Location & Map block:
+    - map icon + "Location & Map link"
+    - input field 
+ - Event Fee and Player level requirements block:
+    - cash icon + "Event Fee" | shield icon + "Player Level" (one row)
+    - input field for fee (0 default [free]) | dropdown options (All levels, Beginner, Intermediate, Advanced) (one row)
+ - Revolut tag block:
+    - chain icon + "Revolut Tag"
+    - input field for tag (prefill if user set tag in App Preferences)
+ - Thin separator line
+ - Attendes Manage block:
+  - "Attendes {x/max_players}" title
+  - List of players attended (First user always host with shield icon (can't be removed)):
+  - Waiting list of players who are registered but main attended list is already full
+  - Search bar to add players manuallyu by name or telegram tag
+  (Host user can manipulate with attendes (remove them from main list, promote from waiting list (even if list full so it can be 10/9), remove people completle or move between lists))
+ - "Save Changes" in Event button
+ - Cancel & Delete Event button (when clicked open additional confirmation to confirm deletion with buttons [Yes, delete & No, Keep It])
+
+Event Details Popup:
+ - Top bar (to close tab by touching this bar)
+ - Title "Game Details" + close button
+ - Event Title and Player Level Block:
+    - Pencil icon and "Event Title" | Player Level (one row)
+    - Event Title | Player Level requirements
+ - Date and Start Time block:
+ - Event Fee and Capacity info block:
+ - Event Description (optional to fill):
+    - Description icon + "Description"
+ - Location & Map block:
+    - map icon + "Location & Map link"
+ - Revolut tag block:
+    - chain icon + "Revolut Tag" button leads to revolut
+ - Thin separator line
+ - Message to host button (leads to DM's to host or to public chat of VolleyBall valley with host tag message prefilled if DM's closed)
+ - RSVP Button with confirmation (Show You're Orginizer if it's host user)
+
+Host Page: 
+ - Header (Page title, Profile avatar icon button)
+ - Block with title: Organizer Dashboard and button "+ New Event" that open create event popup
+ - Hosted events List block:
+  - Event Card with main info:
+    - Event Name | event status (upcoming, ongoing, passed) | pencil edit event icon button on the right side (one row)
+    - Date summary information (calendar Icon | Date | Start time)
+    - Location summary (Location TBD if not setted yet)
+    - players joined amount (players icon | x/max_players | "Players Joined")
+    - fill bar that shows how event filled
+ - Footer with page navigation buttons (Home, Browse, My Games, Profile [Additional Host Button for roles organizer and higher])
+
+My Games Page:
+ - Header (Page title, Profile avatar icon button)
+ - Stats Summary block (Three stats cards):
+    - Upcoming games amount:
+        - Number of Games upcoming
+        - "Upcoming" title below
+    - Total games amount:
+        - Number of Total Games Played
+        - "Total Games" title below
+    - Hours played amount:
+        - Number of Hours played
+        - "Hours Played" title below
+ - "Upcoming Schedule" title
+ - List of upcoming games:
+    - Event Card with main info (by click on event card user can open event details popup):
+        - Event Name | event status (upcoming, ongoing, passed) | host label if user is a host (one row)
+        - Date summary information (calendar Icon | Date | Start time)
+        - Location summary (Location TBD if not setted yet)
+        - players joined amount (players icon | x/max_players | "Players Joined")
+        - fill bar that shows how event filled
+ - Footer with page navigation buttons (Home, Browse, My Games, Profile [Additional Host Button for roles organizer and higher])
+
+Browse Page:
+ - Header (Page title, Profile avatar icon button)
+ - Search bar (to find events by Title, Host, Address, etc.)
+ - Common filters scrolling panel (All, Indoor, Outdoor, Beginner, Intermediate, Advanced)
+ - List of event cards:
+    - Event Card with main info (by click on event card user can open event details popup):
+        - Event type (indoor, outdoor) label | if user joined this event joined or in waitlist label on the right part (one row)
+        - Event Name | event status (upcoming, ongoing, passed) | host label if user is a host (one row)
+        - Date summary information (calendar Icon | Date | Start - End time)
+        - players joined amount (players icon | x/max_players | "Players Joined") | host name
+        - Maps link Button | Revolut payment button (card icon | fee amount) (one row)
+        - RSVP button (if user host this event show "You're the Host", RSVP if user can register to event or waitlist, Cancle RSVP if user already joined or in waitlist)
+ - Footer with page navigation buttons (Home, Browse, My Games, Profile [Additional Host Button for roles organizer and higher])
+
+Home Page:
+ - Header (Page title, Profile avatar icon button)
+ - Player Level and Behavior rating cards block
+ - Next UP block | See All link text on the right that leads to My Games Page
+ - Next game info card:
+    - Upcoming Match label | if user is a host "You're Hosting" label on the right (one row)
+    - game Title
+    - Date and start time information
+ - Open Matches | Browse All link text leads to Browse page:
+    - List of most relevant upcopming games for user (use the same cards as in Browse Page):
+
+
+App Core Logic:
+ - RSVP system: User can register to event if user satisfied requirement Player Level. if event isn't full user will be registered in main players list. If main list is full user still can register and will moved to waitlist (if main list will be free the user from waitlist will be promoted to main list, based on date registered). Also user can cancel registration. If notification setted on promotion user need to have dm message about it.
+ 
