@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.db.database import get_session
-from app.db.models import User, Event, RSVP, UserRole
+from app.db.models import User, Event, RSVP, UserRole, UserPreferencesUpdate
 from app.api.deps import get_current_user, get_current_admin
 
 router = APIRouter()
@@ -38,7 +38,33 @@ async def update_my_role(
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
-    return {"detail": f"Role updated", "role": current_user.role}
+    return {"detail": "Role updated", "role": current_user.role}
+
+# --- NEW: Update Preferences Endpoint ---
+@router.patch("/me/preferences")
+async def update_my_preferences(
+    prefs: UserPreferencesUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Updates user notification toggles and Revolut tag."""
+    
+    if prefs.revolut_tag is not None:
+        current_user.revolut_tag = prefs.revolut_tag
+    if prefs.notif_new_events is not None:
+        current_user.notif_new_events = prefs.notif_new_events
+    if prefs.notif_waitlist is not None:
+        current_user.notif_waitlist = prefs.notif_waitlist
+    if prefs.notif_reminders is not None:
+        current_user.notif_reminders = prefs.notif_reminders
+    if prefs.notif_admin is not None:
+        current_user.notif_admin = prefs.notif_admin
+
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    
+    return {"detail": "Preferences updated successfully", "user": current_user}
 
 @router.patch("/{user_id}/role")
 async def update_user_role(

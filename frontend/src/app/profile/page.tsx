@@ -6,25 +6,18 @@ import {
   Settings, Info, ChevronRight, Loader2,
   CreditCard, MessageSquarePlus, Send, CheckCircle2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomSheet from "@/components/BottomSheet";
+import { api } from "@/lib/api";
 
 export default function ProfilePage() {
-  const { user, rating, level, role, setRole, isLoading, setFooterVisible } = useUser();
+  const { user, rating, level, role, setRole, isLoading, setFooterVisible, refreshUser } = useUser();
   const [copied, setCopied] = useState(false);
   const [activeView, setActiveView] = useState<string | null>(null);
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
-  // Profile Preferences State
-  const [revolutTag, setRevolutTag] = useState(user?.revolut_tag || "");
-
-  // Support Form State (Ported from Header.tsx)
-  const [supportType, setSupportType] = useState<'request' | 'review'>('request');
-  const [message, setMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  // Notification State 
+  // Sync state with user object from Context
+  const [revolutTag, setRevolutTag] = useState("");
   const [notifications, setNotifications] = useState({
     newEvents: true,
     waitlist: true,
@@ -32,14 +25,60 @@ export default function ProfilePage() {
     marketing: false
   });
 
-  const toggleSetting = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+  // Load initial data from user context when user object is available
+  useEffect(() => {
+    if (user) {
+      setRevolutTag(user.revolut_tag || "");
+      setNotifications({
+        newEvents: user.notif_new_events ?? true,
+        waitlist: user.notif_waitlist ?? true,
+        reminders: user.notif_reminders ?? true,
+        marketing: user.notif_admin ?? false,
+      });
+    }
+  }, [user]);
+
+  // Handle Toggle Changes with API Sync
+  const toggleSetting = async (key: keyof typeof notifications, backendKey: string) => {
+    const newValue = !notifications[key];
+    setNotifications(prev => ({ ...prev, [key]: newValue }));
+
+    try {
+      await api.updatePreferences({ [backendKey]: newValue });
+      await refreshUser(); // <--- ADD THIS: Sync global context
+      if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+      }
+    } catch (error) {
+      setNotifications(prev => ({ ...prev, [key]: !newValue }));
+    }
   };
+
+  // Debounced Revolut Tag Saving
+  useEffect(() => {
+    if (!user || revolutTag === user.revolut_tag) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        await api.updatePreferences({ revolut_tag: revolutTag });
+        await refreshUser(); // <--- ADD THIS: Sync global context
+      } catch (error) {
+        console.error("Failed to save Revolut tag:", error);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [revolutTag, user]);
+
+  // Support Form State
+  const [supportType, setSupportType] = useState<'request' | 'review'>('request');
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleRoleChange = async (r: 'member' | 'organizer' | 'admin') => {
     const tg = (window as any).Telegram?.WebApp;
     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
     try {
       setIsUpdatingRole(true);
       await setRole(r);
@@ -54,13 +93,10 @@ export default function ProfilePage() {
 
   const handleSendSupport = () => {
     if (!message.trim()) return;
-    
     setIsSending(true);
-    // Imitate network delay
     setTimeout(() => {
       setIsSending(false);
       setIsSuccess(true);
-      // Reset and close after success animation
       setTimeout(() => {
         setActiveView(null);
         setIsSuccess(false);
@@ -167,7 +203,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Popups Content */}
       <BottomSheet
         isOpen={activeView !== null}
         onClose={() => !isSending && setActiveView(null)}
@@ -175,10 +210,10 @@ export default function ProfilePage() {
       >
         {activeView === 'notifications' && (
           <div className="space-y-1 divide-y divide-gray-50 pb-6">
-            <ToggleRow label="New Games Alerts" description="Be the first to know when a new court is booked." active={notifications.newEvents} onClick={() => toggleSetting('newEvents')} />
-            <ToggleRow label="Waitlist Updates" description="Get a DM when you are promoted from the waitlist." active={notifications.waitlist} onClick={() => toggleSetting('waitlist')} />
-            <ToggleRow label="Game Reminders" description="We will send a reminder 2 hours before the whistle." active={notifications.reminders} onClick={() => toggleSetting('reminders')} />
-            <ToggleRow label="Administrative" description="System updates and community announcements." active={notifications.marketing} onClick={() => toggleSetting('marketing')} />
+            <ToggleRow label="New Games Alerts" description="Be the first to know when a new court is booked." active={notifications.newEvents} onClick={() => toggleSetting('newEvents', 'notif_new_events')} />
+            <ToggleRow label="Waitlist Updates" description="Get a DM when you are promoted from the waitlist." active={notifications.waitlist} onClick={() => toggleSetting('waitlist', 'notif_waitlist')} />
+            <ToggleRow label="Game Reminders" description="We will send a reminder 2 hours before the whistle." active={notifications.reminders} onClick={() => toggleSetting('reminders', 'notif_reminders')} />
+            <ToggleRow label="Administrative" description="System updates and community announcements." active={notifications.marketing} onClick={() => toggleSetting('marketing', 'notif_admin')} />
           </div>
         )}
 
@@ -229,7 +264,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* SUPPORT TAB: Form ported exactly from Header.tsx */}
+        {/* ... SUPPORT and ABOUT views remain the same as previous step ... */}
         {activeView === 'support' && (
           <div className="space-y-6 pb-10">
             <div className="flex p-1 bg-zinc-100 rounded-2xl">
@@ -271,20 +306,13 @@ export default function ProfilePage() {
               }`}
             >
               {isSending ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" /> Sending...
-                </>
+                <><Loader2 size={20} className="animate-spin" /> Sending...</>
               ) : isSuccess ? (
-                <>
-                  <CheckCircle2 size={20} /> Sent Successfully!
-                </>
+                <><CheckCircle2 size={20} /> Sent Successfully!</>
               ) : (
-                <>
-                  <Send size={18} /> Submit {supportType === 'request' ? 'Ticket' : 'Review'}
-                </>
+                <><Send size={18} /> Submit {supportType === 'request' ? 'Ticket' : 'Review'}</>
               )}
             </button>
-            
             <p className="text-center text-[10px] text-gray-400 font-medium px-6 leading-relaxed">
               Our team will review your message and get back to you via Telegram DM if needed.
             </p>

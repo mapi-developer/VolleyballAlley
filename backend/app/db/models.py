@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Optional
 from sqlmodel import SQLModel, Field, Relationship, BigInteger
 from sqlalchemy import Column, ForeignKey
+from pydantic import BaseModel
 
 # --- Enums ---
 class UserRole(str, Enum):
@@ -33,6 +34,13 @@ class User(SQLModel, table=True):
     reliability_score: float = Field(default=5.0)
     last_evaluation_at: Optional[datetime] = None
     
+    # --- NEW PREFERENCES ---
+    revolut_tag: Optional[str] = None
+    notif_new_events: bool = Field(default=True)
+    notif_waitlist: bool = Field(default=True)
+    notif_reminders: bool = Field(default=True)
+    notif_admin: bool = Field(default=False)
+    
     hosted_events: List["Event"] = Relationship(back_populates="host")
     rsvps: List["RSVP"] = Relationship(back_populates="user")
     
@@ -44,6 +52,14 @@ class User(SQLModel, table=True):
         back_populates="admin", 
         sa_relationship_kwargs={"foreign_keys": "BehaviorLog.admin_id"}
     )
+
+# --- NEW: Preference Update Schema ---
+class UserPreferencesUpdate(BaseModel):
+    revolut_tag: Optional[str] = None
+    notif_new_events: Optional[bool] = None
+    notif_waitlist: Optional[bool] = None
+    notif_reminders: Optional[bool] = None
+    notif_admin: Optional[bool] = None
 
 # --- RSVP ---
 class RSVP(SQLModel, table=True):
@@ -68,7 +84,6 @@ class EventBase(SQLModel):
     max_players: int = Field(default=12)
     level_required: PlayLevel = Field(default=PlayLevel.ALL)
 
-# This is the missing class that was causing the ImportError
 class EventUpdate(SQLModel):
     title: Optional[str] = None
     description: Optional[str] = None

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { api } from '@/lib/api'; // Import our new API client
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { api } from '@/lib/api';
 
 export type UserRole = 'member' | 'organizer' | 'admin';
 
@@ -10,7 +10,8 @@ interface UserContextType {
   rating: number;
   level: string;
   role: UserRole;
-  setRole: (role: UserRole) => Promise<void>; // Updated to Promise
+  setRole: (role: UserRole) => Promise<void>;
+  refreshUser: () => Promise<void>; // Added refreshUser to the interface
   footerVisible: boolean;
   setFooterVisible: (visible: boolean) => void;
   isLoading: boolean;
@@ -29,27 +30,33 @@ export const UserProvider = ({
 }) => {
   const [user, setUser] = useState<any>(initialUser);
   const [role, setRoleState] = useState<UserRole>(initialRole);
-  const [rating, setRating] = useState(4.8);
+  const [rating, setRating] = useState(5.0);
   const [level, setLevel] = useState("Beginner");
   const [footerVisible, setFooterVisible] = useState(true);
-  const [isLoading, setIsLoading] = useState(true); // Track loading state
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch real user from Backend on mount
+  // 1. Define the refresh logic as a reusable function
+  const refreshUser = useCallback(async () => {
+    try {
+      const backendUser = await api.getCurrentUser();
+      
+      setUser(backendUser);
+      setRoleState(backendUser.role);
+      setRating(backendUser.reliability_score ?? 5.0);
+      setLevel(backendUser.verified_level ?? "Beginner");
+    } catch (error) {
+      console.error("Failed to refresh user profile:", error);
+    }
+  }, []);
+
+  // 2. Fetch on mount
   useEffect(() => {
-    const fetchProfile = async () => {
+    const initProfile = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        // This will automatically pass the Telegram initData via headers
-        const backendUser = await api.getCurrentUser();
-        
-        setUser(backendUser);
-        setRoleState(backendUser.role);
-        setRating(backendUser.reliability_score || 5.0); // Real db value
-        setLevel(backendUser.verified_level || "Beginner"); // Real db value
-        
+        await refreshUser();
       } catch (error) {
-        console.error("Failed to fetch user profile from API:", error);
-        // Fallback to raw Telegram data if local backend fails to connect
+        // Fallback to raw Telegram data if local backend fails
         const tg = (window as any).Telegram?.WebApp;
         if (tg?.initDataUnsafe?.user) {
           setUser(tg.initDataUnsafe.user);
@@ -59,21 +66,18 @@ export const UserProvider = ({
       }
     };
 
-    fetchProfile();
-  }, []);
+    initProfile();
+  }, [refreshUser]);
 
-  // Make setRole update the database!
   const setRole = async (newRole: UserRole) => {
     const previousRole = role;
     try {
-      // Optimistic UI update (feels instant to the user)
       setRoleState(newRole);
-      
-      // Tell backend to update the database
       await api.updateRole(newRole);
+      // Refresh user after role change to ensure backend object matches
+      await refreshUser();
     } catch (error) {
       console.error("Failed to update role in DB:", error);
-      // Revert if API call fails
       setRoleState(previousRole);
       alert("Failed to update role on server.");
     }
@@ -81,7 +85,7 @@ export const UserProvider = ({
 
   return (
     <UserContext.Provider value={{ 
-      user, rating, level, role, setRole, 
+      user, rating, level, role, setRole, refreshUser,
       footerVisible, setFooterVisible, isLoading 
     }}>
       {children}

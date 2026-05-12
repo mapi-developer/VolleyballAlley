@@ -28,7 +28,7 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
         ...options.headers,
     };
 
-    const response = await fetch(`/api${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
     });
@@ -45,14 +45,28 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
 export const api = {
     // --- USERS ---
     getCurrentUser: () => fetchApi('/users/me'),
-    updateRole: (role: string) => fetchApi(`/users/me/role?new_role=${role}`, { method: 'PATCH' }),
+    
+    updateRole: (role: string) => 
+        fetchApi(`/users/me/role?new_role=${role}`, { method: 'PATCH' }),
+
+    // NEW: Handles syncing notification toggles and revolut tag to backend
+    updatePreferences: (prefs: {
+        revolut_tag?: string;
+        notif_new_events?: boolean;
+        notif_waitlist?: boolean;
+        notif_reminders?: boolean;
+        notif_admin?: boolean;
+    }) => fetchApi('/users/me/preferences', { 
+        method: 'PATCH', 
+        body: JSON.stringify(prefs) 
+    }),
 
     // --- EVENTS ---
     getEvents: () => fetchApi('/events/'),
-    getEventById: (id: number) => fetchApi(`/events/${id}`),
+    getEventById: (id: string) => fetchApi(`/events/${id}`),
     createEvent: (data: any) => fetchApi('/events/', { method: 'POST', body: JSON.stringify(data) }),
     updateEvent: (id: string, data: any) => fetchApi(`/events/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    deleteEvent: (id: number) => fetchApi(`/events/${id}`, { method: 'DELETE' }),
+    deleteEvent: (id: string) => fetchApi(`/events/${id}`, { method: 'DELETE' }),
 
     // --- RSVPS ---
     joinEvent: (eventId: string) => 

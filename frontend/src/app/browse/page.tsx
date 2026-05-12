@@ -68,7 +68,12 @@ export default function BrowsePage() {
             // Sort by date ascending
             const sortedGames = mappedGames.sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
             // Only show events that haven't already finished
-            const upcomingGames = sortedGames.filter(g => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) > Date.now());
+            const upcomingGames = sortedGames.filter(g => {
+                const eventTime = new Date(g.rawDate).getTime();
+                const currentTime = Date.now();
+                // Keep game visible for 6 hours after it starts
+                return eventTime + (6 * 60 * 60 * 1000) > currentTime;
+            });
 
             setLiveGames(upcomingGames);
 
