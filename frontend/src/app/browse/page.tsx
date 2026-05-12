@@ -3,14 +3,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
     Search, Info, Calendar, MapPin,
-    Users, Banknote, Clock, ExternalLink, Map as MapIcon, Loader2
+    Users, Banknote, Clock, ExternalLink, Map as MapIcon, Loader2, Shield, MessageCircle, AlignLeft
 } from 'lucide-react';
 import GameCard, { Game } from '@/components/EventCard';
 import BottomSheet from '@/components/BottomSheet';
 import { useUser } from '@/context/UserContext';
 import { api } from '@/lib/api';
 
-const FILTERS = ["All", "Indoor", "Outdoor", "Advanced", "Beginner"];
+// SPEC UPDATE: Added "Intermediate" to match exact specifications
+const FILTERS = ["All", "Indoor", "Outdoor", "Beginner", "Intermediate", "Advanced"];
 
 export default function BrowsePage() {
     const { user, setFooterVisible } = useUser();
@@ -31,13 +32,13 @@ export default function BrowsePage() {
                 const attendees = dbEvent.attendees || [];
                 const confirmed = attendees.filter((a: any) => a.status === 'confirmed');
                 
-                // NEW: Capture the exact registration object for the current user
+                // WAITLIST FIX: Capture exact registration to know if they are confirmed or waitlisted
                 const userRegistration = attendees.find((a: any) => a.user_id === user?.id);
                 
                 const isUserHost = dbEvent.host_id === user?.id; // Check host
 
                 const startDate = new Date(dbEvent.start_time);
-                const endDate = new Date(dbEvent.end_time || dbEvent.start_time); // Fallback if end_time is missing
+                const endDate = new Date(dbEvent.end_time || dbEvent.start_time);
 
                 // Simple heuristic for Indoor/Outdoor
                 const isSand = dbEvent.location_name.toLowerCase().includes('sand') || dbEvent.location_name.toLowerCase().includes('beach');
@@ -45,7 +46,7 @@ export default function BrowsePage() {
                 return {
                     id: dbEvent.id,
                     type: isSand ? 'Outdoor' : 'Indoor',
-                    level: dbEvent.level_required,
+                    level: dbEvent.level_required || 'All',
                     title: dbEvent.title,
                     description: dbEvent.description,
                     rawDate: dbEvent.start_time,
@@ -60,21 +61,19 @@ export default function BrowsePage() {
                     revolutTag: dbEvent.revolut_tag || undefined,
                     isHost: isUserHost,
                     
-                    // NEW: Pass both boolean and the actual status for Waitlist tracking
+                    // Track RSVP strictly
                     isJoined: !!userRegistration,
                     rsvpStatus: userRegistration ? userRegistration.status : null 
                 };
             });
 
-            // Sort by date ascending (closest events first)
+            // Sort by date ascending
             const sortedGames = mappedGames.sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
-
-            // Only show events that haven't already finished (2 hour buffer)
+            // Only show events that haven't already finished
             const upcomingGames = sortedGames.filter(g => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) > Date.now());
 
             setLiveGames(upcomingGames);
 
-            // Update selected game silently if the popup is open
             if (selectedGame) {
                 const refreshedSelected = mappedGames.find(g => g.id === selectedGame.id);
                 if (refreshedSelected) setSelectedGame(refreshedSelected);
@@ -88,7 +87,7 @@ export default function BrowsePage() {
 
     useEffect(() => {
         loadEvents();
-    }, [user]); // Re-run if user context loads
+    }, [user]);
 
     const filteredGames = useMemo(() => {
         return liveGames.filter(game => {
@@ -108,11 +107,10 @@ export default function BrowsePage() {
         window.open(`https://revolut.me/${cleanTag}`, '_blank');
     };
 
-    // Live API RSVP
     const handleRsvp = async (gameId: string) => {
         try {
-            await api.joinEvent(gameId); // Calls /api/rsvps/{id}/join
-            loadEvents(); // Refresh UI silently
+            await api.joinEvent(gameId); 
+            loadEvents(); 
         } catch (error) {
             console.error("RSVP failed:", error);
         }
@@ -120,8 +118,8 @@ export default function BrowsePage() {
 
     const handleCancelRsvp = async (gameId: string) => {
         try {
-            await api.leaveEvent(gameId); // Calls /api/rsvps/{id}/leave
-            loadEvents(); // Refresh UI silently
+            await api.leaveEvent(gameId); 
+            loadEvents(); 
         } catch (error) {
             console.error("Cancel failed:", error);
         }
@@ -194,8 +192,18 @@ export default function BrowsePage() {
             {/* GAME DETAILS POPUP */}
             <BottomSheet isOpen={!!selectedGame} onClose={() => setSelectedGame(null)} title="Game Details">
                 {selectedGame && (
-                    <div className="space-y-8 pb-10">
-                        {/* Info Grid */}
+                    <div className="space-y-6 pb-10 mt-2">
+                        
+                        {/* SPEC UPDATE: Title & Player Level Block */}
+                        <div>
+                            <h3 className="text-2xl font-black text-gray-900 leading-tight">{selectedGame.title}</h3>
+                            <div className="flex items-center gap-2 mt-2">
+                                <Shield size={16} className="text-blue-500" />
+                                <span className="text-sm font-bold text-gray-600">{selectedGame.level} Level Requirements</span>
+                            </div>
+                        </div>
+
+                        {/* Info Grid (Date, Time, Fee, Capacity) */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-zinc-50 rounded-2xl p-4 space-y-1">
                                 <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-tight"><Calendar size={12} /> Date</div>
@@ -216,15 +224,15 @@ export default function BrowsePage() {
                         </div>
 
                         {/* Description */}
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest px-1"><Info size={14} /> Description</div>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest px-1"><AlignLeft size={14} /> Description</div>
                             <div className="bg-zinc-50 rounded-2xl p-4 text-sm text-gray-700 leading-relaxed font-medium whitespace-pre-wrap">
                                 {selectedGame.description || "No description provided."}
                             </div>
                         </div>
 
                         {/* Maps Location */}
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest px-1"><MapPin size={14} /> Location</div>
                             <button
                                 onClick={() => handleMapClick(selectedGame.location)}
@@ -237,7 +245,7 @@ export default function BrowsePage() {
 
                         {/* REVOLUT PAYMENT BLOCK */}
                         {selectedGame.revolutTag && selectedGame.price.toLowerCase() !== 'free' && (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
                                     <ExternalLink size={14} /> Payment Link
                                 </div>
@@ -251,28 +259,37 @@ export default function BrowsePage() {
                             </div>
                         )}
 
-                        {/* Primary RSVP Action */}
-                        <div className="pt-4 border-t border-gray-100">
+                        <hr className="border-gray-100 my-4" />
+
+                        {/* Actions (Message Host & RSVP) */}
+                        <div className="space-y-3">
+                            {/* SPEC UPDATE: Message to host button */}
+                            {!selectedGame.isHost && (
+                                <button className="w-full py-4 bg-zinc-100 text-gray-700 font-bold rounded-2xl flex items-center justify-center active:scale-95 transition-transform text-sm">
+                                    <MessageCircle size={18} className="mr-2 text-blue-500" /> Message Host
+                                </button>
+                            )}
+
                             {selectedGame.isHost ? (
                                 <button
                                     disabled
                                     className="w-full py-4 rounded-2xl font-black text-base shadow-none bg-zinc-100 text-gray-400 cursor-not-allowed"
                                 >
-                                    You're the Host
+                                    You're the Organizer
                                 </button>
                             ) : selectedGame.isJoined ? (
                                 <button
                                     onClick={() => handleCancelRsvp(selectedGame.id)}
                                     className="w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all bg-rose-50 text-rose-600 shadow-rose-100"
                                 >
-                                    {selectedGame.rsvpStatus === 'waitlisted' ? 'Leave Waitlist' : 'Cancel Registration'}
+                                    {selectedGame.rsvpStatus === 'waitlisted' ? 'Leave Waitlist' : 'Cancel RSVP'}
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => handleRsvp(selectedGame.id)}
                                     className={`w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all ${
                                         selectedGame.currentPlayers >= selectedGame.maxPlayers
-                                            ? 'bg-amber-500 text-white shadow-amber-100' 
+                                            ? 'bg-amber-500 text-white shadow-amber-100'
                                             : 'bg-blue-600 text-white shadow-blue-100'
                                     }`}
                                 >

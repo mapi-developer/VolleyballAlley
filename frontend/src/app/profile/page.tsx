@@ -4,13 +4,13 @@ import { useUser } from "@/context/UserContext";
 import {
   Star, ShieldCheck, Copy, Check, Bell,
   Settings, Info, ChevronRight, Loader2,
-  CreditCard, MessageSquarePlus
+  CreditCard, MessageSquarePlus, Send, CheckCircle2
 } from "lucide-react";
 import { useState } from "react";
 import BottomSheet from "@/components/BottomSheet";
 
 export default function ProfilePage() {
-  const { user, rating, level, role, setRole, isLoading } = useUser();
+  const { user, rating, level, role, setRole, isLoading, setFooterVisible } = useUser();
   const [copied, setCopied] = useState(false);
   const [activeView, setActiveView] = useState<string | null>(null);
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
@@ -18,7 +18,13 @@ export default function ProfilePage() {
   // Profile Preferences State
   const [revolutTag, setRevolutTag] = useState(user?.revolut_tag || "");
 
-  // Notification State - Hardcoded for now, tie to API later
+  // Support Form State (Ported from Header.tsx)
+  const [supportType, setSupportType] = useState<'request' | 'review'>('request');
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  // Notification State 
   const [notifications, setNotifications] = useState({
     newEvents: true,
     waitlist: true,
@@ -46,6 +52,23 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSendSupport = () => {
+    if (!message.trim()) return;
+    
+    setIsSending(true);
+    // Imitate network delay
+    setTimeout(() => {
+      setIsSending(false);
+      setIsSuccess(true);
+      // Reset and close after success animation
+      setTimeout(() => {
+        setActiveView(null);
+        setIsSuccess(false);
+        setMessage('');
+      }, 1500);
+    }, 2000);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -57,7 +80,6 @@ export default function ProfilePage() {
 
   const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : '';
 
-  // Updated Menu to strictly match specs
   const menuItems = [
     { id: 'notifications', label: 'Notification Settings', icon: Bell, color: 'text-blue-500' },
     { id: 'preferences', label: 'App Preferences', icon: Settings, color: 'text-gray-500' },
@@ -65,7 +87,6 @@ export default function ProfilePage() {
     { id: 'about', label: 'Credentials & About', icon: Info, color: 'text-emerald-500' },
   ];
 
-  // Helper Toggle Component
   const ToggleRow = ({ label, description, active, onClick }: any) => (
     <div className="flex items-center justify-between py-4 group cursor-pointer" onClick={onClick}>
       <div className="flex-1 pr-4">
@@ -149,7 +170,7 @@ export default function ProfilePage() {
       {/* Popups Content */}
       <BottomSheet
         isOpen={activeView !== null}
-        onClose={() => setActiveView(null)}
+        onClose={() => !isSending && setActiveView(null)}
         title={menuItems.find(i => i.id === activeView)?.label || ""}
       >
         {activeView === 'notifications' && (
@@ -163,7 +184,6 @@ export default function ProfilePage() {
 
         {activeView === 'preferences' && (
           <div className="space-y-6 pb-6">
-            {/* Role Management Section */}
             <div>
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
                 Role Management (Live Sync)
@@ -187,12 +207,8 @@ export default function ProfilePage() {
                   );
                 })}
               </div>
-              <p className="text-[10px] text-gray-400 mt-3 italic leading-relaxed px-1">
-                Note: Your role determines access to the Host and Admin dashboards.
-              </p>
             </div>
 
-            {/* Revolut Tag Setup Block */}
             <div className="pt-6 border-t border-gray-100">
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
                 Payment Preferences
@@ -208,31 +224,70 @@ export default function ProfilePage() {
                   onChange={(e) => setRevolutTag(e.target.value)}
                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium"
                 />
-                <p className="text-[10px] text-gray-400 mt-2 font-medium leading-relaxed">
-                  Saved automatically. We'll use this to pre-fill the payment link when you host new matches.
-                </p>
               </div>
             </div>
           </div>
         )}
 
+        {/* SUPPORT TAB: Form ported exactly from Header.tsx */}
         {activeView === 'support' && (
-          <div className="space-y-3 pb-6">
-            <button className="w-full flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-gray-100/50 active:scale-95 transition-all group">
-              <div className="flex flex-col text-left">
-                <span className="font-bold text-gray-800 text-sm">Chat with Support</span>
-                <span className="text-xs text-gray-400 font-medium mt-0.5">Reach out via Telegram DM</span>
-              </div>
-              <MessageSquarePlus size={20} className="text-blue-500 group-active:scale-110 transition-transform" />
+          <div className="space-y-6 pb-10">
+            <div className="flex p-1 bg-zinc-100 rounded-2xl">
+              {(['request', 'review'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setSupportType(t)}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+                    supportType === t ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'
+                  }`}
+                >
+                  {t === 'request' ? 'Bug / Request' : 'App Review'}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
+                Your Message
+              </label>
+              <textarea 
+                rows={4}
+                placeholder={supportType === 'request' ? "What's on your mind?" : "Tell us what you think..."}
+                className="w-full bg-zinc-50 border-none rounded-3xl p-5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onFocus={() => setFooterVisible?.(false)}
+                onBlur={() => setFooterVisible?.(true)}
+              />
+            </div>
+
+            <button 
+              disabled={isSending || isSuccess || !message.trim()}
+              onClick={handleSendSupport}
+              className={`w-full py-4 rounded-2xl font-black text-base shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
+                isSuccess 
+                  ? 'bg-emerald-500 text-white shadow-emerald-100' 
+                  : 'bg-blue-600 text-white shadow-blue-100 disabled:opacity-50 disabled:shadow-none'
+              }`}
+            >
+              {isSending ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" /> Sending...
+                </>
+              ) : isSuccess ? (
+                <>
+                  <CheckCircle2 size={20} /> Sent Successfully!
+                </>
+              ) : (
+                <>
+                  <Send size={18} /> Submit {supportType === 'request' ? 'Ticket' : 'Review'}
+                </>
+              )}
             </button>
             
-            <button className="w-full flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-gray-100/50 active:scale-95 transition-all group">
-              <div className="flex flex-col text-left">
-                <span className="font-bold text-gray-800 text-sm">Leave Feedback</span>
-                <span className="text-xs text-gray-400 font-medium mt-0.5">Help us improve the app</span>
-              </div>
-              <Star size={20} className="text-amber-500 group-active:scale-110 transition-transform" />
-            </button>
+            <p className="text-center text-[10px] text-gray-400 font-medium px-6 leading-relaxed">
+              Our team will review your message and get back to you via Telegram DM if needed.
+            </p>
           </div>
         )}
 
