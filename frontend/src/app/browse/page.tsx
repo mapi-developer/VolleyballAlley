@@ -2,15 +2,13 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-    Search, Info, Calendar, MapPin,
-    Users, Banknote, Clock, ExternalLink, Map as MapIcon, Loader2, Shield, MessageCircle, AlignLeft
+    Search, Info, Loader2
 } from 'lucide-react';
 import GameCard, { Game } from '@/components/EventCard';
-import BottomSheet from '@/components/BottomSheet';
+import EventDetailsSheet from '@/components/EventDetailsSheet';
 import { useUser } from '@/context/UserContext';
 import { api } from '@/lib/api';
 
-// SPEC UPDATE: Added "Intermediate" to match exact specifications
 const FILTERS = ["All", "Indoor", "Outdoor", "Beginner", "Intermediate", "Advanced"];
 
 export default function BrowsePage() {
@@ -22,6 +20,7 @@ export default function BrowsePage() {
     const [liveGames, setLiveGames] = useState<Game[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+    const [isCancelling, setIsCancelling] = useState(false);
 
     // Fetch and Map Events
     const loadEvents = async () => {
@@ -41,23 +40,22 @@ export default function BrowsePage() {
                 const endDate = new Date(dbEvent.end_time || dbEvent.start_time);
 
                 // Simple heuristic for Indoor/Outdoor
-                const isSand = dbEvent.location_name.toLowerCase().includes('sand') || dbEvent.location_name.toLowerCase().includes('beach');
+                const isSand = (dbEvent.location_name || "").toLowerCase().includes('sand') || (dbEvent.location_name || "").toLowerCase().includes('beach');
 
                 return {
-                    id: dbEvent.id,
-                    type: isSand ? 'Outdoor' : 'Indoor',
+                    id: String(dbEvent.id),
+                    type: dbEvent.type || (isSand ? 'Outdoor' : 'Indoor'),
                     level: dbEvent.level_required || 'All',
-                    title: dbEvent.title,
+                    title: dbEvent.title || "Untitled Match",
                     description: dbEvent.description,
                     rawDate: dbEvent.start_time,
                     date: startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
                     time: `${startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`,
                     currentPlayers: confirmed.length,
                     maxPlayers: dbEvent.max_players,
-                    hostName: dbEvent.host_id === user?.id ? "You" : "Organizer",
-                    hostRole: "Organizer",
+                    hostName: isUserHost ? "You" : "Organizer",
                     price: dbEvent.price === 0 ? "Free" : `${dbEvent.price} HUF`,
-                    location: dbEvent.location_name,
+                    location: dbEvent.location_name || "Location TBD",
                     revolutTag: dbEvent.revolut_tag || undefined,
                     isHost: isUserHost,
                     
@@ -98,15 +96,6 @@ export default function BrowsePage() {
         });
     }, [searchQuery, activeFilter, liveGames]);
 
-    const handleMapClick = (location: string) => {
-        window.open(`https://maps.google.com/?q=${encodeURIComponent(location)}`, '_blank');
-    };
-
-    const handlePayClick = (tag: string) => {
-        const cleanTag = tag.replace('@', '');
-        window.open(`https://revolut.me/${cleanTag}`, '_blank');
-    };
-
     const handleRsvp = async (gameId: string) => {
         try {
             await api.joinEvent(gameId); 
@@ -118,10 +107,13 @@ export default function BrowsePage() {
 
     const handleCancelRsvp = async (gameId: string) => {
         try {
+            setIsCancelling(true);
             await api.leaveEvent(gameId); 
             loadEvents(); 
         } catch (error) {
             console.error("Cancel failed:", error);
+        } finally {
+            setIsCancelling(false);
         }
     };
 
@@ -170,8 +162,6 @@ export default function BrowsePage() {
                             key={game.id}
                             game={game}
                             onClick={() => setSelectedGame(game)}
-                            onMapClick={handleMapClick}
-                            onPayClick={handlePayClick}
                             onRsvpClick={() => handleRsvp(game.id)}
                             onCancelClick={() => handleCancelRsvp(game.id)}
                         />
@@ -189,117 +179,15 @@ export default function BrowsePage() {
                 )}
             </div>
 
-            {/* GAME DETAILS POPUP */}
-            <BottomSheet isOpen={!!selectedGame} onClose={() => setSelectedGame(null)} title="Game Details">
-                {selectedGame && (
-                    <div className="space-y-6 pb-10 mt-2">
-                        
-                        {/* SPEC UPDATE: Title & Player Level Block */}
-                        <div>
-                            <h3 className="text-2xl font-black text-gray-900 leading-tight">{selectedGame.title}</h3>
-                            <div className="flex items-center gap-2 mt-2">
-                                <Shield size={16} className="text-blue-500" />
-                                <span className="text-sm font-bold text-gray-600">{selectedGame.level} Level Requirements</span>
-                            </div>
-                        </div>
-
-                        {/* Info Grid (Date, Time, Fee, Capacity) */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-zinc-50 rounded-2xl p-4 space-y-1">
-                                <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-tight"><Calendar size={12} /> Date</div>
-                                <p className="text-sm font-bold text-gray-900">{selectedGame.date}</p>
-                            </div>
-                            <div className="bg-zinc-50 rounded-2xl p-4 space-y-1">
-                                <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-tight"><Clock size={12} /> Time</div>
-                                <p className="text-sm font-bold text-gray-900">{selectedGame.time.split(' - ')[0]}</p>
-                            </div>
-                            <div className="bg-zinc-50 rounded-2xl p-4 space-y-1">
-                                <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-tight"><Banknote size={12} /> Court Fee</div>
-                                <p className="text-sm font-bold text-gray-900">{selectedGame.price}</p>
-                            </div>
-                            <div className="bg-zinc-50 rounded-2xl p-4 space-y-1">
-                                <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-tight"><Users size={12} /> Capacity</div>
-                                <p className="text-sm font-bold text-gray-900">{selectedGame.currentPlayers}/{selectedGame.maxPlayers}</p>
-                            </div>
-                        </div>
-
-                        {/* Description */}
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest px-1"><AlignLeft size={14} /> Description</div>
-                            <div className="bg-zinc-50 rounded-2xl p-4 text-sm text-gray-700 leading-relaxed font-medium whitespace-pre-wrap">
-                                {selectedGame.description || "No description provided."}
-                            </div>
-                        </div>
-
-                        {/* Maps Location */}
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest px-1"><MapPin size={14} /> Location</div>
-                            <button
-                                onClick={() => handleMapClick(selectedGame.location)}
-                                className="flex items-center justify-between w-full bg-zinc-100 text-gray-900 p-4 rounded-2xl active:scale-95 transition-all border border-gray-200"
-                            >
-                                <span className="font-bold text-sm truncate pr-4">{selectedGame.location}</span>
-                                <MapIcon size={18} className="text-blue-600 shrink-0" />
-                            </button>
-                        </div>
-
-                        {/* REVOLUT PAYMENT BLOCK */}
-                        {selectedGame.revolutTag && selectedGame.price.toLowerCase() !== 'free' && (
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">
-                                    <ExternalLink size={14} /> Payment Link
-                                </div>
-                                <button
-                                    onClick={() => handlePayClick(selectedGame.revolutTag!)}
-                                    className="flex items-center justify-between w-full bg-blue-600 text-white p-4 rounded-2xl active:scale-95 transition-all"
-                                >
-                                    <span className="font-bold text-sm">Pay via Revolut</span>
-                                    <span className="text-xs opacity-80 font-medium">@{selectedGame.revolutTag.replace('@', '')}</span>
-                                </button>
-                            </div>
-                        )}
-
-                        <hr className="border-gray-100 my-4" />
-
-                        {/* Actions (Message Host & RSVP) */}
-                        <div className="space-y-3">
-                            {/* SPEC UPDATE: Message to host button */}
-                            {!selectedGame.isHost && (
-                                <button className="w-full py-4 bg-zinc-100 text-gray-700 font-bold rounded-2xl flex items-center justify-center active:scale-95 transition-transform text-sm">
-                                    <MessageCircle size={18} className="mr-2 text-blue-500" /> Message Host
-                                </button>
-                            )}
-
-                            {selectedGame.isHost ? (
-                                <button
-                                    disabled
-                                    className="w-full py-4 rounded-2xl font-black text-base shadow-none bg-zinc-100 text-gray-400 cursor-not-allowed"
-                                >
-                                    You're the Organizer
-                                </button>
-                            ) : selectedGame.isJoined ? (
-                                <button
-                                    onClick={() => handleCancelRsvp(selectedGame.id)}
-                                    className="w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all bg-rose-50 text-rose-600 shadow-rose-100"
-                                >
-                                    {selectedGame.rsvpStatus === 'waitlisted' ? 'Leave Waitlist' : 'Cancel RSVP'}
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => handleRsvp(selectedGame.id)}
-                                    className={`w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all ${
-                                        selectedGame.currentPlayers >= selectedGame.maxPlayers
-                                            ? 'bg-amber-500 text-white shadow-amber-100'
-                                            : 'bg-blue-600 text-white shadow-blue-100'
-                                    }`}
-                                >
-                                    {selectedGame.currentPlayers >= selectedGame.maxPlayers ? 'Join Waitlist' : 'RSVP Now'}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </BottomSheet>
+            {/* Unified GAME DETAILS POPUP */}
+            <EventDetailsSheet 
+              isOpen={!!selectedGame} 
+              onClose={() => setSelectedGame(null)} 
+              game={selectedGame} 
+              onRsvp={(id) => handleRsvp(id)} 
+              onCancelRsvp={(id) => handleCancelRsvp(id)} 
+              isCancelling={isCancelling} 
+            />
         </div>
     );
 }
