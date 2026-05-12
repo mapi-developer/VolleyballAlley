@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pencil, AlignLeft, Calendar, Users, Clock, MapPin, Banknote, Shield, Link as LinkIcon, Loader2, Map as MapIcon } from 'lucide-react';
 import BottomSheet from '@/components/BottomSheet';
 import { FormField } from '@/components/FormField';
@@ -24,6 +24,17 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: CreateEv
     location: "", price: "0", revolutTag: ""
   });
 
+  // --- NEW: AUTOFILL LOGIC ---
+  // When the sheet opens or the user data loads, prefill the tag if it exists
+  useEffect(() => {
+    if (isOpen && user?.revolut_tag) {
+      setFormData(prev => ({
+        ...prev,
+        revolutTag: user.revolut_tag
+      }));
+    }
+  }, [isOpen, user]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const startDateTime = new Date(`${formData.date}T${formData.startTime}:00`);
@@ -34,7 +45,7 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: CreateEv
       const payload = {
         title: formData.title || "Untitled Match",
         description: formData.description,
-        type: formData.type, // Sending Type to Backend
+        type: formData.type, 
         start_time: startDateTime.toISOString(),
         end_time: new Date(`${formData.date}T${formData.endTime}:00`).toISOString(),
         location_name: formData.location || "Location TBD",
@@ -48,7 +59,13 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: CreateEv
       if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
       
       onCreate(newEventFromBackend);
-      setFormData({ title: "", description: "", type: "Indoor", level: "All", date: "", maxPlayers: "12", startTime: "18:00", endTime: "20:00", location: "", price: "0", revolutTag: "" });
+      
+      // Reset form but keep the tag for the next time they create an event
+      setFormData({ 
+        title: "", description: "", type: "Indoor", level: "All", 
+        date: "", maxPlayers: "12", startTime: "18:00", endTime: "20:00", 
+        location: "", price: "0", revolutTag: user?.revolut_tag || "" 
+      });
       onClose();
     } catch (error: any) {
       console.error("Create event failed:", error);
