@@ -14,9 +14,13 @@ export default function BottomSheetLayout({ isOpen, onClose, title, children }: 
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = ''; // FIX: Use empty string instead of 'unset'
     }
-    return () => { document.body.style.overflow = 'unset'; };
+    
+    // Cleanup function when component unmounts
+    return () => { 
+      document.body.style.overflow = ''; // FIX: Use empty string
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
