@@ -3,11 +3,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import create_db_and_tables
 from app.api.routes import users, events, rsvps, reports
+from app.services.scheduler import scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Starting up VolleyballAlley Backend...")
-    create_db_and_tables() 
+    create_db_and_tables()
+    scheduler.start()
     yield
     print("Shutting down...")
 

@@ -16,6 +16,39 @@ export default function HomePage() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
+  const parseBackendDate = (utcString?: string) => {
+      if (!utcString) return null;
+      const safeString = utcString.endsWith('Z') || utcString.match(/[+-]\d{2}:\d{2}$/) 
+          ? utcString 
+          : `${utcString}Z`;
+      const dateObj = new Date(safeString);
+      return isNaN(dateObj.getTime()) ? null : dateObj;
+  };
+
+  const getLocalDate = (game: Game, fallback: string) => {
+      const dateObj = parseBackendDate(game.start_time || game.rawDate);
+      if (!dateObj) return fallback;
+      // You can customize this format to match your desired output
+      return dateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const getLocalTime = (game: Game, fallback: string) => {
+      const dateObj = parseBackendDate(game.start_time || game.rawDate);
+      if (!dateObj) return fallback;
+      return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  };
+
+  const getGameTime = (g: any) => {
+    const timeString = g.start_time || g.rawDate;
+    if (!timeString) return 0;
+    
+    const safeString = timeString.endsWith('Z') || timeString.match(/[+-]\d{2}:\d{2}$/) 
+        ? timeString 
+        : `${timeString}Z`;
+        
+    return new Date(safeString).getTime();
+  };
+
   const loadDashboard = async () => {
     try {
       setIsLoading(true);
@@ -37,6 +70,8 @@ export default function HomePage() {
           title: eventData.title,
           description: eventData.description,
           rawDate: eventData.start_time,
+          start_time: eventData.start_time, // Passed explicitly for our robust EventCard
+          end_time: eventData.end_time,     // Passed explicitly for our robust EventCard
           date: dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
           time: `${dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`,
           currentPlayers: confirmed.length,
@@ -51,14 +86,23 @@ export default function HomePage() {
         };
       };
 
-      const upcoming = myGamesData.map(mapGame).filter((g: Game) => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) > now);
-      upcoming.sort((a: Game, b: Game) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
+      // Filter and Sort Upcoming Games using the safe helper
+      const upcoming = myGamesData.map(mapGame).filter((g: Game) => {
+        const time = getGameTime(g);
+        return time > 0 && (time + (2 * 60 * 60 * 1000)) > now;
+      });
+      upcoming.sort((a: Game, b: Game) => getGameTime(a) - getGameTime(b));
       setNextGame(upcoming.length > 0 ? upcoming[0] : null);
 
+      // Filter and Sort Featured Games using the safe helper
       const openFeatured = allEventsData.map(mapGame)
-        .filter((g: Game) => new Date(g.rawDate).getTime() > now && !g.isJoined)
-        .sort((a: Game, b: Game) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime())
+        .filter((g: Game) => {
+          const time = getGameTime(g);
+          return time > 0 && time > now && !g.isJoined;
+        })
+        .sort((a: Game, b: Game) => getGameTime(a) - getGameTime(b))
         .slice(0, 3);
+        
       setFeaturedGames(openFeatured);
 
       if (selectedGame) {
@@ -124,8 +168,15 @@ export default function HomePage() {
               </div>
               <h3 className="text-white font-black text-xl mb-3 pr-8 leading-tight">{nextGame.title}</h3>
               <div className="flex items-center gap-4 text-sm text-gray-300 font-medium">
-                <div className="flex items-center gap-1.5"><Calendar size={14} className="text-blue-400" />{nextGame.date}</div>
-                <div className="flex items-center gap-1.5"><Clock size={14} className="text-blue-400" />{nextGame.time.split(' - ')[0]}</div>
+                {/* STRICT UTC-TO-LOCAL CONVERSION APPLIED HERE */}
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={14} className="text-blue-400" />
+                  {getLocalDate(nextGame, nextGame.date)}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock size={14} className="text-blue-400" />
+                  {getLocalTime(nextGame, nextGame.time.split(' - ')[0])}
+                </div>
               </div>
             </div>
           </div>

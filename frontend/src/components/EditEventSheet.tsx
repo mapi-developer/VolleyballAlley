@@ -21,6 +21,16 @@ const FieldLabel = ({ icon: Icon, text }: { icon: any, text: string }) => (
   </div>
 );
 
+// BULLETPROOF TIME HELPER
+const parseBackendDate = (utcString?: string) => {
+    if (!utcString) return null;
+    const safeString = utcString.endsWith('Z') || utcString.match(/[+-]\d{2}:\d{2}$/) 
+        ? utcString 
+        : `${utcString}Z`;
+    const dateObj = new Date(safeString);
+    return isNaN(dateObj.getTime()) ? null : dateObj;
+};
+
 export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDelete }: EditEventSheetProps) {
   const { user } = useUser(); 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -29,16 +39,29 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const todayStr = new Date().toLocaleDateString('en-CA');
+
   useEffect(() => {
     if (isOpen && event) {
-      // 1. Fix Time Parsing: Extract "18:00" and "20:00" from "18:00 - 20:00"
-      let parsedStart = "18:00";
-      let parsedEnd = "20:00";
-      if (event.time && event.time.includes(' - ')) {
-        [parsedStart, parsedEnd] = event.time.split(' - ');
+      // 1. Strict Parsing from Backend UTC Strings to Local Form Inputs
+      let localDateStr = todayStr;
+      let localStartStr = "18:00";
+      let localEndStr = "20:00";
+
+      // Use the safe parser to catch missing 'Z' issues
+      const startDate = parseBackendDate(event.start_time || event.rawDate);
+      const endDate = parseBackendDate(event.end_time);
+
+      if (startDate) {
+          localDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+          localStartStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      }
+      
+      if (endDate) {
+          localEndStr = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
       }
 
-      // 2. Fix Price Parsing: Extract only the digits from "1000 HUF" or "Free"
+      // 2. Fix Price Parsing
       let parsedPrice = "0";
       if (event.price) {
         const digits = String(event.price).replace(/\D/g, '');
@@ -49,21 +72,26 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
         ...event, 
         waitlist: event.waitlist || [], 
         description: event.description || "",
-        level: event.level || "All", 
+        level: event.level_required || event.level || "All", 
         type: event.type || "Indoor",
-        slots: event.maxPlayers || 12, 
-        startTime: parsedStart,        
-        endTime: parsedEnd,            
+        location: event.location_name || event.location || "",
+        slots: event.max_players || event.maxPlayers || 12, 
+        date: localDateStr,             
+        startTime: localStartStr,        
+        endTime: localEndStr,            
         price: parsedPrice,            
-        revolutTag: event.revolutTag || ""
+        revolutTag: event.revolut_tag || event.revolutTag || ""
       });
     }
-  }, [isOpen, event]);
+  }, [isOpen, event, todayStr]);
 
-  const todayStr = new Date().toLocaleDateString('en-CA');
   if (!localEvent) return null;
 
-  const isLocked = (dateString: string) => (new Date(dateString).getTime() - Date.now()) < (6 * 60 * 60 * 1000);
+  const isLocked = () => {
+    const lockDate = parseBackendDate(event?.start_time || event?.rawDate);
+    if (!lockDate) return false;
+    return (lockDate.getTime() - Date.now()) < (6 * 60 * 60 * 1000);
+  };
 
   const handleManualAddUser = (e: React.FormEvent) => { 
     e.preventDefault(); 
@@ -90,9 +118,9 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      const baseDate = localEvent.rawDate ? localEvent.rawDate.split('T')[0] : todayStr;
-      const startDateTime = new Date(`${baseDate}T${localEvent.startTime}:00`).toISOString();
-      const endDateTime = new Date(`${baseDate}T${localEvent.endTime}:00`).toISOString();
+      // 3. Convert Local Updates back to UTC before sending
+      const startDateTime = new Date(`${localEvent.date}T${localEvent.startTime}:00`).toISOString();
+      const endDateTime = new Date(`${localEvent.date}T${localEvent.endTime}:00`).toISOString();
 
       const payload = {
         title: localEvent.title, 
@@ -106,6 +134,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
         level_required: localEvent.level, 
         revolut_tag: localEvent.revolutTag,
       };
+      
       const updatedBackendEvent = await api.updateEvent(localEvent.id, payload);
       onUpdate(updatedBackendEvent); 
       onClose();
@@ -118,6 +147,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
 
   const handleDelete = async () => {
     try {
+      setShowDeleteConfirm(false)
       setIsDeleting(true); 
       await api.deleteEvent(localEvent.id); 
       onDelete(localEvent.id); 
@@ -163,7 +193,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
         <div className="grid grid-cols-2 gap-3">
           <div>
             <FieldLabel icon={Calendar} text="Date" />
-            <input type="date" min={todayStr} disabled={isLocked(localEvent.rawDate)} className={`${inputClass} disabled:text-gray-400 dark:disabled:text-zinc-600`} value={localEvent.rawDate.split('T')[0]} onChange={e => { const selectedDate = e.target.value; if (selectedDate >= todayStr) setLocalEvent({ ...localEvent, rawDate: `${selectedDate}T${localEvent.rawDate.split('T')[1] || "18:00:00"}` }); }} />
+            <input type="date" min={todayStr} disabled={isLocked()} className={`${inputClass} disabled:text-gray-400 dark:disabled:text-zinc-600`} value={localEvent.date} onChange={e => { const selectedDate = e.target.value; if (selectedDate >= todayStr) setLocalEvent({ ...localEvent, date: selectedDate }); }} />
           </div>
           <div>
             <FieldLabel icon={Users} text="Max Players" />
@@ -182,7 +212,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
 
         <div>
           <FieldLabel icon={MapPin} text="Location & Map Link" />
-          <input type="text" disabled={isLocked(localEvent.rawDate)} className={`${inputClass} disabled:text-gray-400 dark:disabled:text-zinc-600`} value={localEvent.location} onChange={e => setLocalEvent({ ...localEvent, location: e.target.value })} />
+          <input type="text" disabled={isLocked()} className={`${inputClass} disabled:text-gray-400 dark:disabled:text-zinc-600`} value={localEvent.location} onChange={e => setLocalEvent({ ...localEvent, location: e.target.value })} />
         </div>
 
         {/* FEE & REVOLUT ROW */}
@@ -201,10 +231,9 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
         {/* ATTENDEES & WAITLIST UI */}
         <div className="space-y-4">
           <div>
-            <h4 className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1 mb-2">Attendees ({localEvent.attendees.length} / {localEvent.slots})</h4>
+            <h4 className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1 mb-2">Attendees ({localEvent.attendees?.length || 0} / {localEvent.slots})</h4>
             <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-3xl divide-y divide-white/50 dark:divide-white/10 overflow-hidden transition-colors">
-              {localEvent.attendees.map((a: any) => {
-                // Safely identify the host using the UserContext (cannot be kicked)
+              {localEvent.attendees?.map((a: any) => {
                 const isHost = a.user_id === user?.id || a.user_id === localEvent.host_id;
                 return (
                   <div key={a.user_id} className="flex items-center justify-between p-4">

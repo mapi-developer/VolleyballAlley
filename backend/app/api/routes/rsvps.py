@@ -1,5 +1,6 @@
 from uuid import UUID
 from typing import List
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select, func
 from sqlalchemy.orm import selectinload
@@ -52,7 +53,27 @@ async def leave_event(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Player cancels RSVP. Triggers automated waitlist promotion."""
+    """Player cancels RSVP. Enforces 2-hour lock and triggers waitlist promotion."""
+    
+    # 1. Enforce the 2-Hour Integrity Lock
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+        
+    # Ensure start_time is timezone aware for comparison
+    event_time = event.start_time
+    if event_time.tzinfo is None:
+        event_time = event_time.replace(tzinfo=timezone.utc)
+        
+    time_until_match = event_time - datetime.now(timezone.utc)
+    
+    if time_until_match < timedelta(hours=2):
+        raise HTTPException(
+            status_code=400, 
+            detail="Cancellation locked. Match starts in less than 2 hours."
+        )
+
+    # 2. Proceed with cancellation
     rsvp = session.get(RSVP, (current_user.id, event_id))
     if not rsvp:
         raise HTTPException(status_code=404, detail="Registration not found")
@@ -61,7 +82,7 @@ async def leave_event(
     session.delete(rsvp)
     session.commit()
 
-    # CRITICAL: If a confirmed spot opened, promote the next person
+    # 3. CRITICAL: If a confirmed spot opened, promote the next person
     if was_confirmed:
         await promote_next_on_waitlist(event_id, session)
 

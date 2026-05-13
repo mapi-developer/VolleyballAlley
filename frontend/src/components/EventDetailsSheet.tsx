@@ -14,15 +14,37 @@ interface EventDetailsSheetProps {
   isCancelling?: boolean;
 }
 
+// BULLETPROOF HELPERS
+const parseBackendDate = (utcString?: string) => {
+    if (!utcString) return null;
+    const safeString = utcString.endsWith('Z') || utcString.match(/[+-]\d{2}:\d{2}$/) 
+        ? utcString 
+        : `${utcString}Z`;
+    const dateObj = new Date(safeString);
+    return isNaN(dateObj.getTime()) ? null : dateObj;
+};
+
+const getLocalDate = (game: Game, fallback: string) => {
+    const dateObj = parseBackendDate(game.start_time || game.rawDate);
+    if (!dateObj) return fallback;
+    return dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const getLocalTime = (game: Game, fallback: string) => {
+    const dateObj = parseBackendDate(game.start_time || game.rawDate);
+    if (!dateObj) return fallback;
+    return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
 export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCancelRsvp, isCancelling = false }: EventDetailsSheetProps) {
   
-  // Safely calculate variables ONLY if game exists to prevent crashes during the closing animation
   const isFull = game ? game.currentPlayers >= game.maxPlayers : false;
-  const isCancellable = game ? (new Date(game.rawDate).getTime() - Date.now()) > (2 * 60 * 60 * 1000) : false;
+  // Use parseBackendDate for the cancellation lock to ensure accuracy
+  const gameStartTime = game ? parseBackendDate(game.start_time || game.rawDate)?.getTime() || 0 : 0;
+  const isCancellable = gameStartTime > 0 ? (gameStartTime - Date.now()) > (2 * 60 * 60 * 1000) : false;
 
   const handleMapClick = () => {
     if (!game) return;
-    // FIXED: Use the official Google Maps query URL
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(game.location)}`, '_blank');
   };
 
@@ -34,7 +56,6 @@ export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCan
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Game Details">
-      {/* Wrap the content in game && so it only renders if there is data, but keeps the sheet alive to animate! */}
       {game && (
         <div className="space-y-6 pb-10 mt-2">
           {/* Title, Level, & Type Block */}
@@ -56,11 +77,11 @@ export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCan
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 space-y-1 transition-colors">
               <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight"><Calendar size={12} /> Date</div>
-              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{game.date}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{getLocalDate(game, game.date)}</p>
             </div>
             <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 space-y-1 transition-colors">
               <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight"><Clock size={12} /> Time</div>
-              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{game.time.split(' - ')[0]}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{getLocalTime(game, game.time.split(' - ')[0])}</p>
             </div>
             <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 space-y-1 transition-colors">
               <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight"><Banknote size={12} /> Court Fee</div>

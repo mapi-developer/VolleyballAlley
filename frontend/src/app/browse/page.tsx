@@ -19,6 +19,19 @@ export default function BrowsePage() {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
 
+    // Bulletproof Time Helper to satisfy TypeScript and Timezones
+    const getGameTime = (g: any) => {
+        const timeString = g.start_time || g.rawDate;
+        if (!timeString) return 0;
+        
+        // Add 'Z' if FastAPI forgot it, ensuring our sorting math is strictly UTC
+        const safeString = timeString.endsWith('Z') || timeString.match(/[+-]\d{2}:\d{2}$/) 
+            ? timeString 
+            : `${timeString}Z`;
+            
+        return new Date(safeString).getTime();
+    };
+
     const loadEvents = async () => {
         try {
             const data = await api.getEvents();
@@ -39,6 +52,8 @@ export default function BrowsePage() {
                     title: dbEvent.title || "Untitled Match",
                     description: dbEvent.description,
                     rawDate: dbEvent.start_time,
+                    start_time: dbEvent.start_time, // Passed explicitly for our robust EventCard
+                    end_time: dbEvent.end_time,     // Passed explicitly for our robust EventCard
                     date: startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
                     time: `${startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`,
                     currentPlayers: confirmed.length,
@@ -53,8 +68,11 @@ export default function BrowsePage() {
                 };
             });
 
-            const upcomingGames = mappedGames.filter(g => (new Date(g.rawDate).getTime() + (6 * 60 * 60 * 1000)) > Date.now())
-                .sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
+            // Filter out games that ended > 6 hours ago, and sort by chronological start time
+            const upcomingGames = mappedGames.filter(g => {
+                const time = getGameTime(g);
+                return time > 0 && (time + (6 * 60 * 60 * 1000)) > Date.now();
+            }).sort((a, b) => getGameTime(a) - getGameTime(b));
 
             setLiveGames(upcomingGames);
             if (selectedGame) {

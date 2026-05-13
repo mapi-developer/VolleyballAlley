@@ -8,7 +8,9 @@ export interface Game {
     title: string;
     date: string;
     time: string;
-    rawDate: string;
+    rawDate?: string; 
+    start_time?: string; // Added to catch raw backend data
+    end_time?: string;
     location: string;
     currentPlayers: number;
     maxPlayers: number;
@@ -27,15 +29,43 @@ interface GameCardProps {
     game: Game;
     variant?: 'compact' | 'standard' | 'detailed' | 'host';
     onClick?: () => void;
-    // Added back as optional to prevent build errors in host/browse pages
     onEditClick?: (e: React.MouseEvent) => void;
     onRsvpClick?: () => void;
     onCancelClick?: () => void;
 }
 
+// BULLETPROOF HELPERS
+const parseBackendDate = (utcString?: string) => {
+    if (!utcString) return null;
+    // Force UTC parsing if the backend omitted the 'Z' timezone indicator
+    const safeString = utcString.endsWith('Z') || utcString.match(/[+-]\d{2}:\d{2}$/) 
+        ? utcString 
+        : `${utcString}Z`;
+    
+    const dateObj = new Date(safeString);
+    return isNaN(dateObj.getTime()) ? null : dateObj;
+};
+
+const getLocalDate = (game: Game, fallback: string) => {
+    // Check both start_time and rawDate just in case the parent mapper missed one
+    const dateObj = parseBackendDate(game.start_time || game.rawDate);
+    if (!dateObj) return fallback;
+    return dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const getLocalTime = (game: Game, fallback: string) => {
+    const dateObj = parseBackendDate(game.start_time || game.rawDate);
+    if (!dateObj) return fallback;
+    return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
 export default function EventCard({ game, variant = 'detailed', onClick }: GameCardProps) {
     const isFull = game.currentPlayers >= game.maxPlayers;
     const fillPercentage = Math.min((game.currentPlayers / game.maxPlayers) * 100, 100);
+
+    // Override the dumb strings with smart local conversions
+    const displayDate = getLocalDate(game, game.date);
+    const displayTime = getLocalTime(game, game.time);
 
     return (
         <div
@@ -73,10 +103,10 @@ export default function EventCard({ game, variant = 'detailed', onClick }: GameC
             <div className="space-y-2 mb-4">
                 <div className="flex items-center text-[13px] text-gray-600 dark:text-zinc-400 font-medium transition-colors">
                     <Calendar size={14} className="mr-2 text-blue-500 dark:text-blue-400" />
-                    <span>{game.date}</span>
+                    <span>{displayDate}</span>
                     <span className="mx-2 text-gray-300 dark:text-zinc-700">|</span>
                     <Clock size={14} className="mr-2 text-blue-500 dark:text-blue-400" />
-                    <span>{game.time}</span>
+                    <span>{displayTime}</span>
                 </div>
                 <div className="flex items-center text-[13px] text-gray-600 dark:text-zinc-400 font-medium transition-colors">
                     <MapPin size={14} className="mr-2 text-blue-500 dark:text-blue-400" />

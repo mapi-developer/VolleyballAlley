@@ -14,7 +14,7 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
 
   const [formData, setFormData] = useState({
     title: "", description: "", type: "Indoor", level: "All",
-    date: "", maxPlayers: "12", startTime: "18:00", endTime: "20:00",
+    date: todayStr, maxPlayers: "12", startTime: "18:00", endTime: "20:00",
     location: "", price: "0", revolutTag: ""
   });
 
@@ -26,8 +26,12 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 1. Construct Local Date Objects
     const startDateTime = new Date(`${formData.date}T${formData.startTime}:00`);
-    if (startDateTime.getTime() < Date.now()) return alert("Past date!");
+    const endDateTime = new Date(`${formData.date}T${formData.endTime}:00`);
+    
+    if (startDateTime.getTime() < Date.now()) return alert("Cannot create an event in the past!");
 
     try {
       setIsSubmitting(true);
@@ -35,8 +39,9 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
         title: formData.title || "Untitled Match",
         description: formData.description,
         type: formData.type, 
+        // 2. Convert to UTC before sending
         start_time: startDateTime.toISOString(),
-        end_time: new Date(`${formData.date}T${formData.endTime}:00`).toISOString(),
+        end_time: endDateTime.toISOString(),
         location_name: formData.location || "Location TBD",
         max_players: parseInt(formData.maxPlayers) || 12,
         price: parseInt(formData.price) || 0,

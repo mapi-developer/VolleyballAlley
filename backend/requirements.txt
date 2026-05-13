@@ -8,3 +8,4 @@ pyTelegramBotAPI
 pytest
 httpx
 pytest-asyncio
+apscheduler
