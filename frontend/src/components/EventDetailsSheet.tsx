@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Calendar, Clock, Banknote, Users, MapPin, Map as MapIcon, ExternalLink, Shield, XCircle, Loader2, MessageCircle, AlignLeft } from 'lucide-react';
+import { Calendar, Clock, Banknote, Users, Info, MapPin, Map as MapIcon, ExternalLink, Shield, XCircle, Loader2, MessageCircle, AlignLeft } from 'lucide-react';
 import BottomSheet from '@/components/BottomSheet';
 import { Game } from '@/components/EventCard'; 
 
@@ -22,7 +22,8 @@ export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCan
 
   const handleMapClick = () => {
     if (!game) return;
-    window.open(`http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(game.location)}`, '_blank');
+    // FIXED: Use the official Google Maps query URL
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(game.location)}`, '_blank');
   };
 
   const handlePayClick = () => {
@@ -53,26 +54,27 @@ export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCan
 
           {/* Info Grid */}
           <div className="grid grid-cols-2 gap-4">
-            {[
-                { label: 'Date', value: game.date, icon: Calendar },
-                { label: 'Time', value: game.time.split(' - ')[0], icon: Clock },
-                { label: 'Court Fee', value: game.price, icon: Banknote },
-                { label: 'Capacity', value: `${game.currentPlayers}/${game.maxPlayers}`, icon: Users },
-            ].map((item, idx) => (
-                <div key={idx} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 space-y-1 transition-colors">
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight">
-                        <item.icon size={12} /> {item.label}
-                    </div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{item.value}</p>
-                </div>
-            ))}
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 space-y-1 transition-colors">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight"><Calendar size={12} /> Date</div>
+              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{game.date}</p>
+            </div>
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 space-y-1 transition-colors">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight"><Clock size={12} /> Time</div>
+              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{game.time.split(' - ')[0]}</p>
+            </div>
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 space-y-1 transition-colors">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight"><Banknote size={12} /> Court Fee</div>
+              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{game.price}</p>
+            </div>
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 space-y-1 transition-colors">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight"><Users size={12} /> Capacity</div>
+              <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{game.currentPlayers}/{game.maxPlayers}</p>
+            </div>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">
-                <AlignLeft size={14} /> Description
-            </div>
+            <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1"><AlignLeft size={14} /> Description</div>
             <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 text-sm text-gray-700 dark:text-zinc-300 leading-relaxed font-medium whitespace-pre-wrap transition-colors">
               {game.description || "No description provided."}
             </div>
@@ -80,9 +82,7 @@ export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCan
 
           {/* Maps Location */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">
-                <MapPin size={14} /> Location
-            </div>
+            <div className="flex items-center gap-2 text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1"><MapPin size={14} /> Location</div>
             <button onClick={handleMapClick} className="flex items-center justify-between w-full bg-zinc-100 dark:bg-zinc-800 text-gray-900 dark:text-white p-4 rounded-2xl active:scale-95 transition-all border border-gray-200 dark:border-zinc-700">
               <span className="font-bold text-sm truncate pr-4">{game.location}</span>
               <MapIcon size={18} className="text-blue-600 dark:text-blue-400 shrink-0" />
@@ -118,12 +118,12 @@ export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCan
               </button>
             ) : game.isJoined ? (
                isCancellable ? (
-                  <button onClick={() => onCancelRsvp?.(game.id)} disabled={isCancelling} className="w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 disabled:opacity-50 flex justify-center items-center">
+                  <button onClick={() => onCancelRsvp?.(game.id)} disabled={isCancelling} className="w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 shadow-rose-100 dark:shadow-none flex justify-center items-center disabled:opacity-50">
                     {isCancelling ? <Loader2 className="animate-spin" size={20} /> : (game.rsvpStatus === 'waitlisted' ? 'Leave Waitlist' : 'Cancel RSVP')}
                   </button>
                ) : (
                   <div className="space-y-2 text-center">
-                    <div className="w-full flex items-center justify-center gap-2 text-gray-400 dark:text-zinc-600 font-bold text-sm py-4 bg-gray-100 dark:bg-zinc-800 rounded-2xl cursor-not-allowed opacity-60 transition-colors">
+                    <div className="w-full flex items-center justify-center gap-2 text-gray-400 dark:text-zinc-500 font-bold text-sm py-4 bg-gray-100 dark:bg-zinc-800 rounded-2xl cursor-not-allowed opacity-60 transition-colors">
                       <XCircle size={18} /> Cancellation Locked
                     </div>
                     <p className="text-[10px] text-gray-400 dark:text-zinc-500 font-medium px-4 leading-relaxed">
