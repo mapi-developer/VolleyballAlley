@@ -27,6 +27,8 @@ services:
         condition: service_healthy
     networks:
       - volleyball_net
+    ports:
+      - "8000:8000"
 
   frontend:
     build: ./frontend

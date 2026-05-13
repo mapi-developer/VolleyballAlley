@@ -1,3 +1,4 @@
+import html
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
@@ -35,15 +36,15 @@ async def get_events(
     return session.exec(statement).all()
 
 async def notify_users_of_new_event(event: Event, host_name: str, session: Session):
-    """Background task to broadcast new matches."""
-    # Find all users who want new event alerts (excluding the host)
-    users = session.exec(select(User).where(User.notif_new_events == True, User.id != event.host_id)).all()
+    # Escape dynamic text to prevent HTML injection errors
+    safe_host = html.escape(host_name)
+    safe_loc = html.escape(event.location_name)
     
-    print(f"DEBUG: Notifying {len(users)} users about NEW event {event.id}")
-
-    for user in users:
-        msg = f"🏐 *New Match Posted!*\n\n{host_name} just scheduled a game at {event.location_name}.\nSpots are limited, open the app to join!"
-        await dispatch_telegram_notification(user.id, msg, "NEW_EVENT", session)
+    msg = (
+        f"🏐 <b>New Match Posted!</b>\n\n"
+        f"{safe_host} just scheduled a game at <b>{safe_loc}</b>.\n"
+        f"Spots are limited, open the app to join!"
+    )
 
 @router.post("/", response_model=EventReadWithAttendees)
 async def create_event(

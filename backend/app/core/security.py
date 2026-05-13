@@ -2,11 +2,11 @@ import hashlib
 import hmac
 import json
 from urllib.parse import parse_qs
-from fastapi import Header, HTTPException, Depends, status
+from fastapi import Header, Request, HTTPException, Depends, status
 from sqlmodel import Session, select
 from app.core.config import settings
 from app.db.database import get_session
-from app.db.models import User, UserRole
+from app.db.models import PlayLevel, User, UserRole
 
 def validate_telegram_data(init_data: str) -> dict:
     try:
@@ -34,18 +34,50 @@ def validate_telegram_data(init_data: str) -> dict:
         print(f"DEBUG: Auth Error: {str(e)}") # SEE THE REAL ERROR HERE
         raise HTTPException(status_code=401, detail=f"Auth failed: {str(e)}")
 
-def get_current_user(
-    x_telegram_init_data: str = Header(...), 
+async def get_current_user(
+    request: Request,
     session: Session = Depends(get_session)
 ) -> User:
-    """Dependency that validates user and auto-registers them if missing."""
-    data = validate_telegram_data(x_telegram_init_data)
-    user_data = json.loads(data.get('user', '{}'))
-    tg_id = user_data.get('id')
+    # 1. Check for the TEST BYPASS first
+    test_user_id = request.headers.get("x-test-user-id")
+    if test_user_id:
+        uid = int(test_user_id)
+        user = session.get(User, uid)
+        
+        # AUTO-CREATE test users if they don't exist
+        if not user:
+            user = User(
+                id=uid,
+                first_name=f"TestUser_{uid}",
+                role=UserRole.ORGANIZER, # Give them powers for the test
+                verified_level=PlayLevel.ADVANCED
+            )
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        return user
+
+    # 2. Get the raw header string
+    raw_init_data = request.headers.get("x-telegram-init-data")
+    if not raw_init_data:
+        raise HTTPException(status_code=401, detail="No auth data provided")
+
+    # 3. Validate and parse the string into a dictionary
+    validated_data = validate_telegram_data(raw_init_data)
+    
+    # 4. Extract and parse the 'user' JSON string from the dictionary
+    try:
+        user_json = validated_data.get('user', '{}')
+        user_data = json.loads(user_json)
+        tg_id = user_data.get('id')
+    except Exception as e:
+        print(f"DEBUG: JSON Parse Error: {str(e)}")
+        raise HTTPException(status_code=400, detail="Malformed user data")
     
     if not tg_id:
         raise HTTPException(status_code=400, detail="User ID missing in data")
 
+    # 5. DB Retrieval or Creation
     user = session.get(User, tg_id)
     
     if not user:

@@ -40,14 +40,21 @@ async def dispatch_telegram_notification(
     payload = {
         "chat_id": user.id,
         "text": message,
-        "parse_mode": "Markdown"
+        "parse_mode": "HTML" # Change this from Markdown to HTML
     }
     
     async with httpx.AsyncClient() as client:
         try:
+            print(f"📡 Sending notification to {user_id}...")
             response = await client.post(TELEGRAM_API_URL, json=payload)
-            response.raise_for_status()
+            
+            if response.status_code != 200:
+                print(f"❌ Telegram API Error for user {user_id}: {response.text}")
+                return False
+            
+            print(f"✅ Notification sent to {user_id}")
             return True
-        except httpx.HTTPError as e:
-            print(f"Telegram API Error for user {user_id}: {e}")
+        except Exception as e:
+            print(f"🔥 Error: {e}")
             return False
+        
