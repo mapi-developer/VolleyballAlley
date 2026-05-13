@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import Script from "next/script";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ThemeSync from "@/components/ThemeSync";
 import "./globals.css";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
       </head>
       <body className="min-h-full flex flex-col bg-zinc-50 overflow-x-hidden">
+        <ThemeSync />
         <UserProvider initialRole={initialRole} initialUser={initialUser}>
           <Header /> 
           

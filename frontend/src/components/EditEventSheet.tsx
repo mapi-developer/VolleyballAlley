@@ -1,28 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Pencil, Calendar, MapPin, Clock, Banknote, Shield, 
-  UserMinus, Trash2, AlertTriangle, Search, Loader2, 
-  ArrowUpCircle, ArrowDownCircle, AlignLeft, Link as LinkIcon, Users, Map as MapIcon
-} from 'lucide-react';
+import { Pencil, Calendar, MapPin, Clock, Banknote, Shield, UserMinus, Trash2, AlertTriangle, Search, Loader2, ArrowUpCircle, ArrowDownCircle, AlignLeft, Link as LinkIcon, Users, Map as MapIcon } from 'lucide-react';
 import BottomSheet from '@/components/BottomSheet';
 import { api } from '@/lib/api';
 import { useUser } from '@/context/UserContext';
 
-interface EditEventSheetProps {
-  isOpen: boolean; onClose: () => void; event: any;
-  onUpdate: (updatedEvent: any) => void; onDelete: (eventId: string) => void;
-}
-
 const FieldLabel = ({ icon: Icon, text }: { icon: any, text: string }) => (
-  <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 px-1">
+  <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-1.5 px-1">
     <Icon size={14} /> {text}
   </div>
 );
 
-export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDelete }: EditEventSheetProps) {
-  const { user } = useUser(); // Safely use the logged-in user to verify the Host
+export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDelete }: { isOpen: boolean; onClose: () => void; event: any; onUpdate: (u: any) => void; onDelete: (id: string) => void; }) {
+  const { user } = useUser();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [localEvent, setLocalEvent] = useState<any>(null);
@@ -31,210 +22,69 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
 
   useEffect(() => {
     if (isOpen && event) {
-      // 1. Fix Time Parsing: Extract "18:00" and "20:00" from "18:00 - 20:00"
-      let parsedStart = "18:00";
-      let parsedEnd = "20:00";
-      if (event.time && event.time.includes(' - ')) {
-        [parsedStart, parsedEnd] = event.time.split(' - ');
-      }
-
-      // 2. Fix Price Parsing: Extract only the digits from "1000 HUF" or "Free"
-      let parsedPrice = "0";
-      if (event.price) {
-        const digits = String(event.price).replace(/\D/g, '');
-        if (digits) parsedPrice = digits;
-      }
-
-      setLocalEvent({ 
-        ...event, 
-        waitlist: event.waitlist || [], 
-        description: event.description || "",
-        level: event.level || "All", 
-        type: event.type || "Indoor",
-        slots: event.maxPlayers || 12, // Fix Max Players binding
-        startTime: parsedStart,        // Fix Start Time binding
-        endTime: parsedEnd,            // Fix End Time binding
-        price: parsedPrice,            // Fix Price binding
-        revolutTag: event.revolutTag || ""
-      });
+      let parsedStart = "18:00", parsedEnd = "20:00";
+      if (event.time?.includes(' - ')) [parsedStart, parsedEnd] = event.time.split(' - ');
+      setLocalEvent({ ...event, waitlist: event.waitlist || [], description: event.description || "", slots: event.maxPlayers || 12, startTime: parsedStart, endTime: parsedEnd, price: String(event.price).replace(/\D/g, '') || "0", revolutTag: event.revolutTag || "" });
     }
   }, [isOpen, event]);
 
-  const todayStr = new Date().toLocaleDateString('en-CA');
   if (!localEvent) return null;
+  const inputClass = "w-full bg-zinc-50 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors";
 
-  const isLocked = (dateString: string) => (new Date(dateString).getTime() - Date.now()) < (6 * 60 * 60 * 1000);
-
-  const handleManualAddUser = (e: React.FormEvent) => { 
-    e.preventDefault(); 
-    if(!searchQuery.trim()) return; 
-    setLocalEvent({...localEvent, attendees: [...localEvent.attendees, { user_id: `manual-${Date.now()}`, name: searchQuery, user: { first_name: searchQuery }, role: 'member' }]}); 
-    setSearchQuery(""); 
-  };
-  
-  const handlePromote = (id: string) => { 
-    const player = localEvent.waitlist.find((p: any) => p.user_id === id); 
-    if (player) setLocalEvent({ ...localEvent, waitlist: localEvent.waitlist.filter((p: any) => p.user_id !== id), attendees: [...localEvent.attendees, player]}); 
-  };
-  
-  const handleDemote = (id: string) => { 
-    const player = localEvent.attendees.find((p: any) => p.user_id === id); 
-    if (player) setLocalEvent({ ...localEvent, attendees: localEvent.attendees.filter((p: any) => p.user_id !== id), waitlist: [...localEvent.waitlist, player]}); 
-  };
-  
-  const handleRemove = (id: string, listType: 'main' | 'waitlist') => { 
-    if (listType === 'main') setLocalEvent({ ...localEvent, attendees: localEvent.attendees.filter((u: any) => u.user_id !== id) }); 
-    else setLocalEvent({ ...localEvent, waitlist: localEvent.waitlist.filter((u: any) => u.user_id !== id) }); 
-  };
+  const handleManualAddUser = (e: React.FormEvent) => { e.preventDefault(); if(!searchQuery.trim()) return; setLocalEvent({...localEvent, attendees: [...localEvent.attendees, { user_id: `manual-${Date.now()}`, user: { first_name: searchQuery } }]}); setSearchQuery(""); };
+  const handlePromote = (id: string) => { const p = localEvent.waitlist.find((p: any) => p.user_id === id); if (p) setLocalEvent({ ...localEvent, waitlist: localEvent.waitlist.filter((p: any) => p.user_id !== id), attendees: [...localEvent.attendees, p]}); };
+  const handleDemote = (id: string) => { const p = localEvent.attendees.find((p: any) => p.user_id === id); if (p) setLocalEvent({ ...localEvent, attendees: localEvent.attendees.filter((p: any) => p.user_id !== id), waitlist: [...localEvent.waitlist, p]}); };
+  const handleRemove = (id: string, type: 'main' | 'waitlist') => { if (type === 'main') setLocalEvent({ ...localEvent, attendees: localEvent.attendees.filter((u: any) => u.user_id !== id) }); else setLocalEvent({ ...localEvent, waitlist: localEvent.waitlist.filter((u: any) => u.user_id !== id) }); };
 
   const handleSave = async () => {
-    try {
-      setIsSaving(true);
-      
-      // Construct correct ISO string for the backend using the rawDate + inputs
-      const baseDate = localEvent.rawDate ? localEvent.rawDate.split('T')[0] : todayStr;
-      const startDateTime = new Date(`${baseDate}T${localEvent.startTime}:00`).toISOString();
-      const endDateTime = new Date(`${baseDate}T${localEvent.endTime}:00`).toISOString();
-
-      const payload = {
-        title: localEvent.title, 
-        description: localEvent.description, 
-        type: localEvent.type,
-        location_name: localEvent.location, 
-        start_time: startDateTime,
-        end_time: endDateTime,
-        price: parseInt(localEvent.price) || 0, 
-        max_players: parseInt(localEvent.slots) || 12,
-        level_required: localEvent.level, 
-        revolut_tag: localEvent.revolutTag,
-      };
-      const updatedBackendEvent = await api.updateEvent(localEvent.id, payload);
-      onUpdate(updatedBackendEvent); 
-      onClose();
-    } catch (error) { 
-      alert("Failed to save changes."); 
-    } finally { 
-      setIsSaving(false); 
-    }
+    try { setIsSaving(true); const baseDate = localEvent.rawDate?.split('T')[0] || new Date().toISOString().split('T')[0]; await api.updateEvent(localEvent.id, { title: localEvent.title, description: localEvent.description, type: localEvent.type, location_name: localEvent.location, start_time: new Date(`${baseDate}T${localEvent.startTime}:00`).toISOString(), end_time: new Date(`${baseDate}T${localEvent.endTime}:00`).toISOString(), price: parseInt(localEvent.price) || 0, max_players: parseInt(localEvent.slots) || 12, level_required: localEvent.level, revolut_tag: localEvent.revolutTag }); onUpdate(localEvent); onClose(); } catch (e) { alert("Failed!"); } finally { setIsSaving(false); }
   };
 
-  const handleDelete = async () => {
-    try {
-      setIsDeleting(true); 
-      await api.deleteEvent(localEvent.id); 
-      onDelete(localEvent.id); 
-      onClose();
-    } catch (error) { 
-      alert("Failed to delete event."); 
-    } finally { 
-      setIsDeleting(false); 
-    }
-  };
+  const handleDelete = async () => { try { setIsDeleting(true); await api.deleteEvent(localEvent.id); onDelete(localEvent.id); onClose(); } catch (e) { alert("Failed!"); } finally { setIsDeleting(false); } };
 
   return (
     <BottomSheet isOpen={isOpen} onClose={() => { onClose(); setShowDeleteConfirm(false); }} title="Manage Event">
       <div className="space-y-6 pb-10 mt-2">
-        <div>
-            <FieldLabel icon={Pencil} text="Event Title" />
-            <input type="text" className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.title} onChange={e => setLocalEvent({ ...localEvent, title: e.target.value })} />
-        </div>
-        <div>
-          <FieldLabel icon={AlignLeft} text="Description" />
-          <textarea rows={2} className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-medium outline-none resize-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.description} onChange={e => setLocalEvent({ ...localEvent, description: e.target.value })} />
-        </div>
+        <div><FieldLabel icon={Pencil} text="Title" /><input type="text" className={inputClass} value={localEvent.title} onChange={e => setLocalEvent({ ...localEvent, title: e.target.value })} /></div>
         
-        {/* LEVEL & TYPE ROW */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <FieldLabel icon={Shield} text="Player Level" />
-            <select className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none appearance-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.level} onChange={e => setLocalEvent({ ...localEvent, level: e.target.value })}>
-              <option value="All">All Levels</option><option value="Beginner">Beginner</option><option value="Intermediate">Intermediate</option><option value="Advanced">Advanced</option>
-            </select>
-          </div>
-          <div>
-            <FieldLabel icon={MapIcon} text="Game Type" />
-            <select className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none appearance-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.type} onChange={e => setLocalEvent({ ...localEvent, type: e.target.value })}>
-              <option value="Indoor">Indoor</option><option value="Outdoor">Outdoor</option>
-            </select>
-          </div>
-        </div>
-
-        {/* DATE & MAX PLAYERS ROW */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <FieldLabel icon={Calendar} text="Date" />
-            <input type="date" min={todayStr} disabled={isLocked(localEvent.rawDate)} className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-bold disabled:text-gray-400 outline-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.rawDate.split('T')[0]} onChange={e => { const selectedDate = e.target.value; if (selectedDate >= todayStr) setLocalEvent({ ...localEvent, rawDate: `${selectedDate}T${localEvent.rawDate.split('T')[1] || "18:00:00"}` }); }} />
-          </div>
-          <div>
-            <FieldLabel icon={Users} text="Max Players" />
-            <input type="number" min="2" max="50" className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.slots} onChange={e => setLocalEvent({ ...localEvent, slots: e.target.value })} />
-          </div>
-        </div>
-
-        <div>
-          <FieldLabel icon={Clock} text="Time Slot" />
-          <div className="flex items-center gap-3">
-             <input type="time" className="flex-1 bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.startTime} onChange={e => setLocalEvent({ ...localEvent, startTime: e.target.value })} />
-             <span className="text-sm font-bold text-gray-400">to</span>
-             <input type="time" className="flex-1 bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.endTime} onChange={e => setLocalEvent({ ...localEvent, endTime: e.target.value })} />
-          </div>
-        </div>
-
-        <div>
-          <FieldLabel icon={MapPin} text="Location & Map Link" />
-          <input type="text" disabled={isLocked(localEvent.rawDate)} className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none disabled:text-gray-400 focus:ring-2 focus:ring-blue-500/20" value={localEvent.location} onChange={e => setLocalEvent({ ...localEvent, location: e.target.value })} />
-        </div>
-
-        {/* FEE & REVOLUT ROW */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-             <FieldLabel icon={Banknote} text="Event Fee" />
-             <input type="number" min="0" placeholder="0 (Free)" className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.price} onChange={e => setLocalEvent({ ...localEvent, price: e.target.value })} />
-          </div>
-          <div>
-             <FieldLabel icon={LinkIcon} text="Revolut Tag" />
-             <input type="text" placeholder="@tag" className="w-full bg-zinc-50 rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" value={localEvent.revolutTag} onChange={e => setLocalEvent({ ...localEvent, revolutTag: e.target.value })} />
-          </div>
-        </div>
-        <hr className="border-gray-100" />
-        
-        {/* ATTENDEES & WAITLIST UI */}
         <div className="space-y-4">
-          <div>
-            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1 mb-2">Attendees ({localEvent.attendees.length} / {localEvent.slots})</h4>
-            <div className="bg-zinc-50 rounded-3xl divide-y divide-white/50 overflow-hidden">
-              {localEvent.attendees.map((a: any) => {
-                // Safely identify the host using the UserContext (cannot be kicked)
-                const isHost = a.user_id === user?.id || a.user_id === localEvent.host_id;
-                return (
-                  <div key={a.user_id} className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-2"><span className="text-sm font-bold text-gray-700">{a.user?.first_name || a.name} {isHost ? "(Host)" : ""}</span>{isHost && <Shield size={12} className="text-blue-500" />}</div>
-                    {!isHost && (<div className="flex gap-2"><button onClick={() => handleDemote(a.user_id)} className="p-2 text-amber-500 bg-white rounded-xl shadow-sm"><ArrowDownCircle size={16} /></button><button onClick={() => handleRemove(a.user_id, 'main')} className="p-2 text-rose-500 bg-white rounded-xl shadow-sm"><UserMinus size={16} /></button></div>)}
-                  </div>
-                );
-              })}
-            </div>
+          <h4 className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">Attendees ({localEvent.attendees.length} / {localEvent.slots})</h4>
+          <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-3xl divide-y divide-white/10 overflow-hidden">
+            {localEvent.attendees.map((a: any) => {
+              const isHost = a.user_id === user?.id || a.user_id === localEvent.host_id;
+              return (
+                <div key={a.user_id} className="flex items-center justify-between p-4">
+                  <span className="text-sm font-bold text-gray-700 dark:text-zinc-200">{a.user?.first_name || a.name} {isHost ? "(Host)" : ""}</span>
+                  {!isHost && (<div className="flex gap-2"><button onClick={() => handleDemote(a.user_id)} className="p-2 text-amber-500 bg-white dark:bg-zinc-700 rounded-xl shadow-sm"><ArrowDownCircle size={16} /></button><button onClick={() => handleRemove(a.user_id, 'main')} className="p-2 text-rose-500 bg-white dark:bg-zinc-700 rounded-xl shadow-sm"><UserMinus size={16} /></button></div>)}
+                </div>
+              );
+            })}
           </div>
-          {localEvent.waitlist && localEvent.waitlist.length > 0 && (
-            <div>
-              <h4 className="text-[11px] font-black text-amber-500 uppercase tracking-widest px-1 mb-2 flex justify-between">Waitlist <span>{localEvent.waitlist.length} waiting</span></h4>
-              <div className="bg-amber-50 rounded-3xl divide-y divide-white/50 overflow-hidden">
-                {localEvent.waitlist.map((a: any) => (
-                  <div key={a.user_id} className="flex items-center justify-between p-4">
-                    <span className="text-sm font-bold text-amber-900">{a.user?.first_name || a.name}</span>
-                    <div className="flex gap-2"><button onClick={() => handlePromote(a.user_id)} className="p-2 text-emerald-600 bg-white rounded-xl shadow-sm"><ArrowUpCircle size={16} /></button><button onClick={() => handleRemove(a.user_id, 'waitlist')} className="p-2 text-rose-500 bg-white rounded-xl shadow-sm"><UserMinus size={16} /></button></div>
-                  </div>
-                ))}
+        </div>
+
+        <form onSubmit={handleManualAddUser} className="flex gap-2 pt-2">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-600" />
+            <input type="text" placeholder="Add manually..." className="w-full bg-zinc-50 dark:bg-zinc-800 border-none rounded-2xl py-3 pl-9 pr-3 text-sm text-gray-900 dark:text-white font-medium outline-none transition-colors" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          </div>
+          <button type="submit" className="bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white px-5 rounded-2xl text-xs font-bold active:scale-95 transition-all">Add</button>
+        </form>
+
+        <div className="pt-6 border-t border-gray-100 dark:border-zinc-800 space-y-3">
+          {!showDeleteConfirm ? (
+            <>
+              <button onClick={handleSave} disabled={isSaving} className="w-full bg-blue-600 dark:bg-blue-500 text-white py-4 rounded-2xl font-black shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95">{isSaving ? <Loader2 className="animate-spin" size={20} /> : "Save Changes"}</button>
+              <button onClick={() => setShowDeleteConfirm(true)} className="w-full text-rose-500 font-bold text-sm py-4 bg-rose-50 dark:bg-rose-900/10 rounded-2xl transition-all active:scale-95 flex justify-center items-center gap-2"><Trash2 size={18} /> Delete Event</button>
+            </>
+          ) : (
+            <div className="bg-rose-500 rounded-3xl p-6 text-white space-y-4 shadow-xl">
+              <div className="flex items-center gap-3 font-black uppercase text-[11px] tracking-widest"><AlertTriangle size={18} /> Confirm Deletion</div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={handleDelete} disabled={isDeleting} className="flex-1 bg-white text-rose-600 py-3.5 rounded-xl font-black text-xs transition-all active:scale-95">{isDeleting ? <Loader2 className="animate-spin" size={16} /> : "YES, DELETE"}</button>
+                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 bg-rose-700 text-white py-3.5 rounded-xl font-black text-xs transition-all active:scale-95">NO, KEEP IT</button>
               </div>
             </div>
           )}
-          <form onSubmit={handleManualAddUser} className="flex gap-2 pt-2"><div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input type="text" placeholder="Add player manually..." className="w-full bg-zinc-50 border-none rounded-2xl py-3 pl-9 pr-3 text-sm font-medium outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div><button type="submit" className="bg-zinc-900 text-white px-5 rounded-2xl text-xs font-bold active:scale-95">Add</button></form>
-        </div>
-
-        {/* SAVE & DELETE ACTIONS */}
-        <div className="pt-6 border-t border-gray-100 space-y-3">
-          {!showDeleteConfirm && (<button onClick={handleSave} disabled={isSaving} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-200 active:scale-95 transition-all flex justify-center items-center gap-2">{isSaving ? <Loader2 className="animate-spin" size={20} /> : "Save Changes"}</button>)}
-          {!showDeleteConfirm ? (<button onClick={() => setShowDeleteConfirm(true)} className="w-full flex items-center justify-center gap-2 text-rose-500 font-bold text-sm py-4 bg-rose-50 rounded-2xl active:scale-95 transition-transform"><Trash2 size={18} /> Cancel & Delete Event</button>) : (<div className="bg-rose-500 rounded-3xl p-6 text-white space-y-4 animate-in zoom-in-95 duration-200 shadow-xl shadow-rose-200"><div className="flex items-center gap-3 font-black uppercase text-[11px] tracking-widest"><AlertTriangle size={18} /> Confirm Deletion</div><p className="text-sm font-medium">This action cannot be undone.</p><div className="flex gap-3 pt-2"><button onClick={handleDelete} disabled={isDeleting} className="flex-1 bg-white text-rose-600 py-3.5 rounded-xl font-black text-xs active:scale-95 flex justify-center">{isDeleting ? <Loader2 className="animate-spin" size={16} /> : "YES, DELETE"}</button><button onClick={() => setShowDeleteConfirm(false)} className="flex-1 bg-rose-700 text-white py-3.5 rounded-xl font-black text-xs active:scale-95">NO, KEEP IT</button></div></div>)}
         </div>
       </div>
     </BottomSheet>

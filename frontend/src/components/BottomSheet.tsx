@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
-import { createPortal } from 'react-dom'; // Import Portal
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface BottomSheetProps {
@@ -15,14 +15,11 @@ const BottomSheet = ({ isOpen, onClose, title, children }: BottomSheetProps) => 
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [mounted, setMounted] = useState(false); // To handle SSR safety
+  const [mounted, setMounted] = useState(false);
   const [dragY, setDragY] = useState(0);
   const startY = useRef(0);
 
-  // 1. Ensure component is mounted on client before using Portal
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -56,55 +53,27 @@ const BottomSheet = ({ isOpen, onClose, title, children }: BottomSheetProps) => 
 
   const onTouchEnd = () => {
     setIsDragging(false);
-    if (dragY > 120) {
-      onClose();
-    } else {
-      setDragY(0);
-    }
+    if (dragY > 120) onClose(); else setDragY(0);
   };
 
-  // 2. Safety check for SSR and rendering
   if (!mounted || !shouldRender) return null;
 
-  // 3. Render inside a Portal to escape the layout stacking context
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end justify-center overflow-hidden">
-      {/* Backdrop */}
-      <div 
-        className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ease-in-out ${
-          isAnimating ? 'opacity-100' : 'opacity-0'
-        }`}
-        onClick={onClose}
-      />
+      <div className={`absolute inset-0 bg-black/40 dark:bg-black/70 backdrop-blur-[2px] transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`} onClick={onClose} />
       
-      {/* Sheet Content */}
       <div 
-        className={`relative w-full max-w-md bg-white rounded-t-[32px] shadow-2xl flex flex-col max-h-[90vh] transition-transform ${
-          isDragging ? 'duration-0' : 'duration-300' 
-        } ease-out transform`}
-        style={{ 
-          transform: `translateY(${isAnimating ? `${dragY}px` : '100%'})` 
-        }}
+        className={`relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-t-[32px] shadow-2xl flex flex-col max-h-[90vh] transition-transform ${isDragging ? 'duration-0' : 'duration-300'} ease-out transform transition-colors duration-200`}
+        style={{ transform: `translateY(${isAnimating ? `${dragY}px` : '100%'})` }}
       >
-        <div 
-          className="w-full cursor-grab active:cursor-grabbing touch-none"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-        >
+        <div className="w-full cursor-grab active:cursor-grabbing touch-none" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
           <div className="flex justify-center py-3">
-            <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+            <div className="w-12 h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-full" />
           </div>
 
-          <div className="px-6 pb-4 flex items-center justify-between border-b border-gray-50">
-            <h3 className="text-xl font-bold text-gray-900 select-none">{title}</h3>
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              className="p-2 bg-zinc-50 rounded-full text-gray-400 active:scale-90 transition-transform"
-            >
+          <div className="px-6 pb-4 flex items-center justify-between border-b border-gray-50 dark:border-zinc-800">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white select-none">{title}</h3>
+            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-full text-gray-400 dark:text-zinc-500 active:scale-90 transition-all">
               <X size={20} />
             </button>
           </div>

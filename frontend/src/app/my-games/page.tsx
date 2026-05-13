@@ -29,12 +29,11 @@ export default function MyGamesPage() {
         const confirmed = (dbEvent.attendees || []).filter((a: any) => a.status === 'confirmed');
         const durationHours = (endDate.getTime() - dateObj.getTime()) / (1000 * 60 * 60) || 2;
         
-        // Safely check for location text
         const locName = dbEvent.location_name || "Location TBD";
         const isSand = locName.toLowerCase().includes('sand') || locName.toLowerCase().includes('beach');
 
         return {
-          id: String(dbEvent.id), // FIX: Strictly convert to String
+          id: String(dbEvent.id),
           title: dbEvent.title || "Untitled Match", 
           description: dbEvent.description,
           type: dbEvent.type || (isSand ? 'Outdoor' : 'Indoor'),
@@ -57,10 +56,14 @@ export default function MyGamesPage() {
 
       const now = Date.now();
       const upcoming = mappedGames.filter((g: any) => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) > now).sort((a: any, b: any) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
-const past = mappedGames.filter((g: any) => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) <= now);
+      const past = mappedGames.filter((g: any) => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) <= now);
 
-setUpcomingGames(upcoming); setPastGames(past);
-if (selectedGame) { const refreshed = mappedGames.find((g: any) => g.id === selectedGame.id); if (refreshed) setSelectedGame(refreshed); }
+      setUpcomingGames(upcoming); 
+      setPastGames(past);
+      if (selectedGame) { 
+        const refreshed = mappedGames.find((g: any) => g.id === selectedGame.id); 
+        if (refreshed) setSelectedGame(refreshed); 
+      }
     } catch (error) { 
       console.error(error); 
     } finally { 
@@ -82,7 +85,7 @@ if (selectedGame) { const refreshed = mappedGames.find((g: any) => g.id === sele
       setIsCancelling(true); 
       await api.leaveEvent(gameId); 
       fetchMyGames(); 
-      setSelectedGame(null); // Close the sheet on success
+      setSelectedGame(null);
     } 
     catch (error) { console.error(error); } 
     finally { setIsCancelling(false); }
@@ -90,27 +93,29 @@ if (selectedGame) { const refreshed = mappedGames.find((g: any) => g.id === sele
 
   return (
     <div className="py-4 space-y-6 animate-in fade-in duration-500 pb-24">
+      {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-3">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-[24px] p-4 shadow-sm border border-gray-100 flex flex-col items-center text-center justify-center">
-            <p className="text-xl font-black text-blue-600 leading-none">{stat.value}</p>
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-tight mt-2 leading-tight">{stat.label}</p>
+          <div key={index} className="bg-white dark:bg-zinc-900 rounded-[24px] p-4 shadow-sm border border-gray-100 dark:border-zinc-800 flex flex-col items-center text-center justify-center transition-colors">
+            <p className="text-xl font-black text-blue-600 dark:text-blue-400 leading-none">{stat.value}</p>
+            <p className="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight mt-2 leading-tight">{stat.label}</p>
           </div>
         ))}
       </div>
 
       <div className="space-y-4 pt-2">
-        <h2 className="text-sm font-black text-gray-400 uppercase tracking-widest px-1">Upcoming Schedule</h2>
+        <h2 className="text-sm font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">Upcoming Schedule</h2>
+        
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-zinc-500">
             <Loader2 className="animate-spin mb-4 text-blue-500" size={32} />
             <p>Loading your games...</p>
           </div>
         ) : upcomingGames.length === 0 ? (
-          <div className="bg-white rounded-[32px] p-10 shadow-sm border border-dashed border-gray-200 text-center">
-            <Calendar className="mx-auto mb-3 text-gray-300" size={32} />
-            <p className="text-sm font-bold text-gray-800">Your schedule is empty</p>
-            <p className="text-xs text-gray-400 mt-1">Head to the Browse tab to find matches.</p>
+          <div className="bg-white dark:bg-zinc-900 rounded-[32px] p-10 shadow-sm border border-dashed border-gray-200 dark:border-zinc-800 text-center transition-colors">
+            <Calendar className="mx-auto mb-3 text-gray-300 dark:text-zinc-700" size={32} />
+            <p className="text-sm font-bold text-gray-800 dark:text-zinc-200">Your schedule is empty</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Head to the Browse tab to find matches.</p>
           </div>
         ) : (
           <div className="space-y-4">
