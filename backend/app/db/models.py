@@ -76,6 +76,7 @@ class RSVP(SQLModel, table=True):
 class EventBase(SQLModel):
     title: str
     description: str
+    type: str = Field(default="Indoor")
     start_time: datetime
     end_time: datetime
     location_name: str
@@ -87,6 +88,7 @@ class EventBase(SQLModel):
 class EventUpdate(SQLModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    type: Optional[str] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     location_name: Optional[str] = None

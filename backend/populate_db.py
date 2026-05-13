@@ -43,19 +43,22 @@ def populate():
 
         # 3. Define Event Templates
         now = datetime.now(timezone.utc).replace(tzinfo=None)
+        
+        # Expanded templates for more variety
         event_templates = [
             {"title": "Monday Night Spikes", "loc": "City Indoor Arena", "type": "Indoor", "lvl": PlayLevel.INTERMEDIATE, "price": 2000},
             {"title": "Sunset Beach Volley", "loc": "Margaret Island Sand", "type": "Outdoor", "lvl": PlayLevel.ALL, "price": 0},
             {"title": "Advanced Pro 6v6", "loc": "Downtown Pro Center", "type": "Indoor", "lvl": PlayLevel.ADVANCED, "price": 3000},
             {"title": "Beginner Bootcamp", "loc": "University Gym", "type": "Indoor", "lvl": PlayLevel.BEGINNER, "price": 1000},
             {"title": "Weekend Sand Clash", "loc": "Lupa Beach", "type": "Outdoor", "lvl": PlayLevel.INTERMEDIATE, "price": 1500},
+            {"title": "Friday Night Draft", "loc": "BME Sport Center", "type": "Indoor", "lvl": PlayLevel.INTERMEDIATE, "price": 2500},
+            {"title": "Sunday Morning Drills", "loc": "Kopaszi Gát", "type": "Outdoor", "lvl": PlayLevel.ALL, "price": 1200},
         ]
 
-        print("Generating 12 diverse events...")
         all_events = []
         
-        # Generate Past Events (6 events)
-        for i in range(1, 7):
+        print("Generating 4 past events for historical data...")
+        for i in range(1, 5):
             tpl = random.choice(event_templates)
             event = Event(
                 title=f"Past: {tpl['title']}",
@@ -71,16 +74,24 @@ def populate():
             )
             all_events.append(event)
 
-        # Generate Upcoming Events (6 events)
-        for i in range(1, 7):
+        print("Generating 10 diverse upcoming events...")
+        for i in range(1, 11):
             tpl = random.choice(event_templates)
+            
+            # Randomize days ahead (next 21 days) and evening hours
+            days_ahead = random.randint(1, 21)
+            hour_start = random.choice([16, 18, 19, 20])
+            
+            # Create a clean start time (e.g. exactly 18:00:00)
+            event_start = (now + timedelta(days=days_ahead)).replace(hour=hour_start, minute=0, second=0, microsecond=0)
+
             event = Event(
                 title=tpl['title'],
                 description="Join us for this upcoming match! Bring water and good vibes.",
-                start_time=now + timedelta(days=i*3),
-                end_time=now + timedelta(days=i*3) + timedelta(hours=2),
+                start_time=event_start,
+                end_time=event_start + timedelta(hours=2),
                 location_name=tpl['loc'],
-                max_players=random.choice([10, 12]),
+                max_players=random.choice([10, 12, 14]),
                 price=tpl['price'],
                 level_required=tpl['lvl'],
                 host_id=random.choice([org1.id, admin.id]),
@@ -117,7 +128,7 @@ def populate():
                 elif fill_type == "full":
                     num = event.max_players - 1
                 else: # Waitlisted
-                    num = event.max_players + 3
+                    num = event.max_players + random.randint(1, 4)
                 
                 players = random.sample(members, min(num, len(members)))
                 for idx, p in enumerate(players):
@@ -125,7 +136,7 @@ def populate():
                     session.add(RSVP(user_id=p.id, event_id=event.id, status=status, attended=False))
 
         session.commit()
-        print("✅ Database successfully populated with 12 events and 30+ users!")
+        print(f"✅ Database successfully populated with {len(all_events)} total events and 30+ users!")
 
 if __name__ == "__main__":
     populate()

@@ -43,25 +43,26 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
 
   useEffect(() => {
     if (isOpen && event) {
-      // 1. Strict Parsing from Backend UTC Strings to Local Form Inputs
       let localDateStr = todayStr;
       let localStartStr = "18:00";
       let localEndStr = "20:00";
 
-      // Use the safe parser to catch missing 'Z' issues
-      const startDate = parseBackendDate(event.start_time || event.rawDate);
-      const endDate = parseBackendDate(event.end_time);
+      const utcStart = event.start_time || event.rawDate;
+      const utcEnd = event.end_time;
 
+      const startDate = parseBackendDate(utcStart);
       if (startDate) {
           localDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
           localStartStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
       }
       
+      const endDate = parseBackendDate(utcEnd);
       if (endDate) {
           localEndStr = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      } else if (event.time && event.time.includes(' - ')) {
+          localEndStr = event.time.split(' - ')[1].trim();
       }
 
-      // 2. Fix Price Parsing
       let parsedPrice = "0";
       if (event.price) {
         const digits = String(event.price).replace(/\D/g, '');
@@ -118,17 +119,27 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      // 3. Convert Local Updates back to UTC before sending
-      const startDateTime = new Date(`${localEvent.date}T${localEvent.startTime}:00`).toISOString();
-      const endDateTime = new Date(`${localEvent.date}T${localEvent.endTime}:00`).toISOString();
+      
+      // EXPLICIT NUMERIC PARSING: Prevents Browser Timezone String bugs
+      const [year, month, day] = localEvent.date.split('-').map(Number);
+      const [startHr, startMin] = localEvent.startTime.split(':').map(Number);
+      const [endHr, endMin] = localEvent.endTime.split(':').map(Number);
+
+      const startDateTime = new Date(year, month - 1, day, startHr, startMin);
+      const endDateTime = new Date(year, month - 1, day, endHr, endMin);
+
+      // Handle Cross-Midnight Events (e.g. 23:00 to 01:00 next day)
+      if (endDateTime < startDateTime) {
+          endDateTime.setDate(endDateTime.getDate() + 1);
+      }
 
       const payload = {
         title: localEvent.title, 
         description: localEvent.description, 
-        type: localEvent.type,
+        type: localEvent.type, // This will now save because of the models.py update!
         location_name: localEvent.location, 
-        start_time: startDateTime,
-        end_time: endDateTime,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
         price: parseInt(localEvent.price) || 0, 
         max_players: parseInt(localEvent.slots) || 12,
         level_required: localEvent.level, 
