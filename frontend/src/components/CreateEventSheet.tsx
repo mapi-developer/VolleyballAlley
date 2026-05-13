@@ -27,11 +27,15 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 1. Construct Local Date Objects
     const startDateTime = new Date(`${formData.date}T${formData.startTime}:00`);
     const endDateTime = new Date(`${formData.date}T${formData.endTime}:00`);
-    
-    if (startDateTime.getTime() < Date.now()) return alert("Cannot create an event in the past!");
+
+    // CROSS-MIDNIGHT FIX: If the game ends at 00:00, we must tell JavaScript it happens the NEXT day.
+    if (endDateTime <= startDateTime) {
+        endDateTime.setDate(endDateTime.getDate() + 1);
+    }
+
+    if (startDateTime.getTime() < Date.now()) return alert("Past date!");
 
     try {
       setIsSubmitting(true);
@@ -39,7 +43,6 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
         title: formData.title || "Untitled Match",
         description: formData.description,
         type: formData.type, 
-        // 2. Convert to UTC before sending
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
         location_name: formData.location || "Location TBD",
@@ -52,7 +55,11 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
       const newEventFromBackend = await api.createEvent(payload);
       onCreate(newEventFromBackend);
       onClose();
-    } catch (error: any) { alert("Failed to create event"); } finally { setIsSubmitting(false); }
+    } catch (error: any) { 
+        alert("Failed to create event"); 
+    } finally { 
+        setIsSubmitting(false); 
+    }
   };
 
   const inputClass = "w-full bg-zinc-50 dark:bg-zinc-800 text-gray-900 dark:text-white border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-colors";

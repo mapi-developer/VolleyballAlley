@@ -21,14 +21,22 @@ const FieldLabel = ({ icon: Icon, text }: { icon: any, text: string }) => (
   </div>
 );
 
-// BULLETPROOF TIME HELPER
+// BULLETPROOF TIME PARSER
 const parseBackendDate = (utcString?: string) => {
     if (!utcString) return null;
+    // Ensure the browser treats it as UTC by adding 'Z' if missing
     const safeString = utcString.endsWith('Z') || utcString.match(/[+-]\d{2}:\d{2}$/) 
         ? utcString 
         : `${utcString}Z`;
     const dateObj = new Date(safeString);
     return isNaN(dateObj.getTime()) ? null : dateObj;
+};
+
+const formatToInputTime = (date: Date | null) => {
+  if (!date) return "20:00";
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
 };
 
 export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDelete }: EditEventSheetProps) {
@@ -43,23 +51,26 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
 
   useEffect(() => {
     if (isOpen && event) {
+      // 3. APPLY UNIFIED LOGIC TO BOTH START AND END
+      const startDate = parseBackendDate(event.start_time || event.rawDate);
+      const endDate = parseBackendDate(event.end_time);
+
+      // Default values
       let localDateStr = todayStr;
       let localStartStr = "18:00";
       let localEndStr = "20:00";
 
-      const utcStart = event.start_time || event.rawDate;
-      const utcEnd = event.end_time;
-
-      const startDate = parseBackendDate(utcStart);
       if (startDate) {
+          // Properly format the YYYY-MM-DD for the date input
           localDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
-          localStartStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+          localStartStr = formatToInputTime(startDate);
       }
       
-      const endDate = parseBackendDate(utcEnd);
       if (endDate) {
-          localEndStr = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+          // NO MORE SPLITTING STRINGS - Use the actual Date object
+          localEndStr = formatToInputTime(endDate);
       } else if (event.time && event.time.includes(' - ')) {
+          // Only use this as a absolute last resort if the backend literally sent no end_time
           localEndStr = event.time.split(' - ')[1].trim();
       }
 
@@ -120,37 +131,37 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
     try {
       setIsSaving(true);
       
-      // EXPLICIT NUMERIC PARSING: Prevents Browser Timezone String bugs
-      const [year, month, day] = localEvent.date.split('-').map(Number);
-      const [startHr, startMin] = localEvent.startTime.split(':').map(Number);
-      const [endHr, endMin] = localEvent.endTime.split(':').map(Number);
+      // 1. Re-calculate the Local Dates to ensure they are valid objects
+      const startDateTime = new Date(`${localEvent.date}T${localEvent.startTime}:00`);
+      const endDateTime = new Date(`${localEvent.date}T${localEvent.endTime}:00`);
 
-      const startDateTime = new Date(year, month - 1, day, startHr, startMin);
-      const endDateTime = new Date(year, month - 1, day, endHr, endMin);
-
-      // Handle Cross-Midnight Events (e.g. 23:00 to 01:00 next day)
-      if (endDateTime < startDateTime) {
+      // 2. THE MIDNIGHT FIX: Ensures 00:00 is saved as the next day
+      if (endDateTime <= startDateTime) {
           endDateTime.setDate(endDateTime.getDate() + 1);
       }
 
+      // 3. Construct Payload (matching backend EventUpdate schema exactly)
       const payload = {
         title: localEvent.title, 
         description: localEvent.description, 
-        type: localEvent.type, // This will now save because of the models.py update!
+        type: localEvent.type,
         location_name: localEvent.location, 
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
+        start_time: startDateTime.toISOString(), // Correctly sends UTC string
+        end_time: endDateTime.toISOString(),     // Correctly sends UTC string
         price: parseInt(localEvent.price) || 0, 
         max_players: parseInt(localEvent.slots) || 12,
         level_required: localEvent.level, 
         revolut_tag: localEvent.revolutTag,
       };
       
+      // localEvent.id must be passed here
       const updatedBackendEvent = await api.updateEvent(localEvent.id, payload);
       onUpdate(updatedBackendEvent); 
       onClose();
-    } catch (error) { 
-      alert("Failed to save changes."); 
+    } catch (error: any) { 
+        // 4. LOG THE SPECIFIC ERROR
+        console.error("Save Error:", error.response?.data || error.message);
+        alert("Failed to save changes. Check console for details."); 
     } finally { 
       setIsSaving(false); 
     }

@@ -50,29 +50,23 @@ async def create_event(
     current_user: User = Depends(get_current_organizer),
     session: Session = Depends(get_session)
 ):
-    # 1. Normalize times to UTC 
     if event_in.start_time.tzinfo is None:
         event_in.start_time = event_in.start_time.replace(tzinfo=timezone.utc)
     if event_in.end_time.tzinfo is None:
         event_in.end_time = event_in.end_time.replace(tzinfo=timezone.utc)
 
-    # 2. Create the Event
     db_event = Event.model_validate(event_in, update={"host_id": current_user.id})
     session.add(db_event)
     session.commit()
     
-    # CRITICAL FIX: Refresh the object so the DB assigns the UUID properly before the next step
     session.refresh(db_event) 
 
-    # 3. Automation: Host auto-registration
     host_rsvp = RSVP(user_id=current_user.id, event_id=db_event.id, status=RSVPStatus.CONFIRMED)
     session.add(host_rsvp)
     session.commit()
     
-    # 4. Trigger Background Notification
     background_tasks.add_task(notify_users_of_new_event, db_event, current_user.first_name, session)
     
-    # 5. Reload for response with Attendees array attached
     statement = select(Event).where(Event.id == db_event.id).options(selectinload(Event.attendees))
     return session.exec(statement).first()
 
@@ -83,7 +77,6 @@ async def update_event(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Updates event details. Enforces 24-hour lock & triggers promotions if capacity increases."""
     db_event = session.get(Event, event_id)
     if not db_event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -91,10 +84,8 @@ async def update_event(
     if db_event.host_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the host can update this event")
 
-    # 1. Enforce the 24-Hour Edit Lock
+    # 1. THE SAFETY SHIELD: Force DB time to be aware before doing math
     event_time = db_event.start_time
-    
-    # CRITICAL FIX: Make sure the existing DB time is timezone-aware before doing math
     if event_time.tzinfo is None:
         event_time = event_time.replace(tzinfo=timezone.utc)
         
@@ -106,16 +97,13 @@ async def update_event(
             detail="Event logistics are locked 24 hours before start time."
         )
 
-    # 2. Normalize incoming updates to UTC
+    # 2. Normalize incoming updates from frontend
     if event_update.start_time and event_update.start_time.tzinfo is None:
         event_update.start_time = event_update.start_time.replace(tzinfo=timezone.utc)
     if event_update.end_time and event_update.end_time.tzinfo is None:
         event_update.end_time = event_update.end_time.replace(tzinfo=timezone.utc)
 
-    # 3. Track old capacity before applying updates
-    old_max_players = db_event.max_players
-
-    # 4. Apply updates
+    # 3. Apply updates
     update_data = event_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_event, key, value)
@@ -123,14 +111,13 @@ async def update_event(
     session.add(db_event)
     session.commit()
     
-    # 5. Trigger Waitlist Promotion if capacity was increased
-    new_max_players = getattr(db_event, "max_players", old_max_players)
-    if new_max_players > old_max_players:
+    # 4. Handle Waitlist Promotion
+    if event_update.max_players and event_update.max_players > db_event.max_players:
         await promote_next_on_waitlist(event_id, session)
     
     session.refresh(db_event)
     
-    # 6. Reload with attendees for consistent response
+    # 5. Reload with attendees
     statement = select(Event).where(Event.id == event_id).options(selectinload(Event.attendees))
     return session.exec(statement).first()
 

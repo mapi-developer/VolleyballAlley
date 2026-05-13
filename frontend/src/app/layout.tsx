@@ -27,6 +27,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+        <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+        <script>eruda.init();</script>
       </head>
       <body className="min-h-full flex flex-col bg-zinc-50 overflow-x-hidden">
         <ThemeSync />

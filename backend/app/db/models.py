@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 from enum import Enum
 from typing import List, Optional
 from sqlmodel import SQLModel, Field, Relationship, BigInteger
-from sqlalchemy import Column, ForeignKey
+from sqlalchemy import Column, ForeignKey, DateTime
 from pydantic import BaseModel
 
 # --- Enums ---
@@ -77,8 +77,12 @@ class EventBase(SQLModel):
     title: str
     description: str
     type: str = Field(default="Indoor")
-    start_time: datetime
-    end_time: datetime
+    start_time: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
+    end_time: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
     location_name: str
     price: int
     revolut_tag: Optional[str] = None
