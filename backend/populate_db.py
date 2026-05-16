@@ -7,136 +7,168 @@ from app.db.models import (
     UserRole, PlayLevel, RSVPStatus
 )
 
+# --- CONFIGURATION ---
+TOTAL_MEMBERS = 30
+PAST_EVENTS_COUNT = 6
+UPCOMING_EVENTS_COUNT = 10
+
+EVENT_TEMPLATES = [
+    {"title": "Monday Night Spikes", "loc": "City Indoor Arena", "type": "Indoor", "lvl": PlayLevel.INTERMEDIATE, "price": 2000},
+    {"title": "Sunset Beach Volley", "loc": "Margaret Island Sand", "type": "Outdoor", "lvl": PlayLevel.ALL, "price": 0},
+    {"title": "Advanced Pro 6v6", "loc": "Downtown Pro Center", "type": "Indoor", "lvl": PlayLevel.ADVANCED, "price": 3000},
+    {"title": "Beginner Bootcamp", "loc": "University Gym", "type": "Indoor", "lvl": PlayLevel.BEGINNER, "price": 1000},
+    {"title": "Weekend Sand Clash", "loc": "Lupa Beach", "type": "Outdoor", "lvl": PlayLevel.INTERMEDIATE, "price": 1500},
+    {"title": "Friday Night Draft", "loc": "BME Sport Center", "type": "Indoor", "lvl": PlayLevel.INTERMEDIATE, "price": 2500},
+    {"title": "Sunday Morning Drills", "loc": "Kopaszi Gát", "type": "Outdoor", "lvl": PlayLevel.ALL, "price": 1200},
+]
+
+def create_users(session: Session):
+    print(f"Creating {TOTAL_MEMBERS + 3} users with preferences...")
+    
+    # Core Staff
+    admin = User(
+        id=100000001, username="admin_alex", first_name="Alex", 
+        role=UserRole.ADMIN, verified_level=PlayLevel.ADVANCED,
+        revolut_tag="alex_vball", notif_admin=True
+    )
+    org1 = User(
+        id=200000001, username="org_sarah", first_name="Sarah", 
+        role=UserRole.ORGANIZER, verified_level=PlayLevel.INTERMEDIATE,
+        revolut_tag="sarah_spikes"
+    )
+    org2 = User(
+        id=200000002, username="org_mike", first_name="Mike", 
+        role=UserRole.ORGANIZER, verified_level=PlayLevel.ADVANCED,
+        revolut_tag="mike_vball"
+    )
+    
+    staff = [admin, org1, org2]
+    session.add_all(staff)
+    
+    # Generic Members
+    members = []
+    for i in range(1, TOTAL_MEMBERS + 1):
+        member = User(
+            id=300000000 + i,
+            username=f"player_{i}",
+            first_name=f"Player{i}",
+            role=UserRole.MEMBER,
+            verified_level=random.choice([PlayLevel.BEGINNER, PlayLevel.INTERMEDIATE, PlayLevel.ADVANCED]),
+            reliability_score=round(random.uniform(3.8, 5.0), 1),
+            revolut_tag=f"pay_me_{i}" if random.random() > 0.5 else None,
+            notif_new_events=random.choice([True, False]),
+            notif_waitlist=True
+        )
+        members.append(member)
+        session.add(member)
+    
+    session.commit()
+    return staff, members
+
+def create_events(session: Session, hosts: list):
+    print(f"Generating {PAST_EVENTS_COUNT} past and {UPCOMING_EVENTS_COUNT} upcoming events...")
+    now = datetime.now(timezone.utc)
+    all_events = []
+
+    # Generate Past Events
+    for i in range(1, PAST_EVENTS_COUNT + 1):
+        tpl = random.choice(EVENT_TEMPLATES)
+        event_start = now - timedelta(days=i * 3, hours=random.randint(1, 12))
+        event = Event(
+            title=f"Past: {tpl['title']}",
+            description="A completed match. Check out the highlights in the chat!",
+            start_time=event_start,
+            end_time=event_start + timedelta(hours=2),
+            location_name=tpl['loc'],
+            type=tpl['type'],
+            max_players=random.choice([12, 14]),
+            price=tpl['price'],
+            level_required=tpl['lvl'],
+            host_id=random.choice(hosts).id,
+            revolut_tag=random.choice(hosts).revolut_tag
+        )
+        all_events.append(event)
+
+    # Generate Upcoming Events
+    for i in range(1, UPCOMING_EVENTS_COUNT + 1):
+        tpl = random.choice(EVENT_TEMPLATES)
+        days_ahead = random.randint(1, 30)
+        hour_start = random.choice([17, 18, 19, 20])
+        event_start = (now + timedelta(days=days_ahead)).replace(hour=hour_start, minute=0, second=0, microsecond=0)
+        
+        event = Event(
+            title=tpl['title'],
+            description="Join us for high energy play! Don't forget to pay the fee via Revolut.",
+            start_time=event_start,
+            end_time=event_start + timedelta(hours=2),
+            location_name=tpl['loc'],
+            type=tpl['type'], # Populating the new field
+            max_players=random.choice([10, 12, 14]),
+            price=tpl['price'],
+            level_required=tpl['lvl'],
+            host_id=random.choice(hosts).id,
+            revolut_tag=random.choice(hosts).revolut_tag
+        )
+        all_events.append(event)
+
+    session.add_all(all_events)
+    session.commit()
+    for e in all_events: session.refresh(e)
+    return all_events
+
+def fill_rsvps(session: Session, events: list, members: list):
+    print("Filling rosters and waitlists...")
+    now = datetime.now(timezone.utc)
+    
+    for event in events:
+        # 1. Add Host
+        session.add(RSVP(
+            user_id=event.host_id, 
+            event_id=event.id, 
+            status=RSVPStatus.CONFIRMED, 
+            attended=(event.start_time < now)
+        ))
+        
+        # 2. Determine Fill Level
+        if event.start_time < now:
+            # Past matches are usually full
+            fill_count = event.max_players - 1
+        else:
+            # Future matches vary
+            fill_count = random.randint(2, event.max_players + 5)
+            
+        # 3. Sample Users
+        players = random.sample(members, min(fill_count, len(members)))
+        
+        for idx, player in enumerate(players):
+            # If idx + 1 (for host) < max_players, they are confirmed
+            is_confirmed = (idx + 1) < event.max_players
+            status = RSVPStatus.CONFIRMED if is_confirmed else RSVPStatus.WAITLISTED
+            
+            session.add(RSVP(
+                user_id=player.id,
+                event_id=event.id,
+                status=status,
+                attended=(event.start_time < now and is_confirmed)
+            ))
+            
+    session.commit()
+
 def populate():
-    print("Initializing database tables...")
+    print("Initializing database...")
     SQLModel.metadata.create_all(engine)
     
-    print("Starting database population...")
-    
     with Session(engine) as session:
-        # 1. Check for existing data
-        existing_admin = session.get(User, 100000001)
-        if existing_admin:
-            print("⚠️ Data already exists. Skipping population.")
+        # Check if users already exist
+        if session.exec(select(User)).first():
+            print("⚠️ Data already exists. Skipping.")
             return
 
-        # 2. Create Core Users
-        admin = User(id=100000001, username="admin_alex", first_name="Alex", role=UserRole.ADMIN, verified_level=PlayLevel.ADVANCED)
-        org1 = User(id=200000001, username="org_sarah", first_name="Sarah", role=UserRole.ORGANIZER, verified_level=PlayLevel.INTERMEDIATE)
-        org2 = User(id=200000002, username="org_mike", first_name="Mike", role=UserRole.ORGANIZER, verified_level=PlayLevel.ADVANCED)
-        session.add_all([admin, org1, org2])
+        staff, members = create_users(session)
+        events = create_events(session, staff)
+        fill_rsvps(session, events, members)
         
-        # Create 30 members to allow for full games and waitlists
-        members = []
-        for i in range(1, 31):
-            member = User(
-                id=300000000 + i,
-                username=f"player_{i}",
-                first_name=f"Player{i}",
-                role=UserRole.MEMBER,
-                verified_level=random.choice([PlayLevel.BEGINNER, PlayLevel.INTERMEDIATE, PlayLevel.ADVANCED]),
-                reliability_score=round(random.uniform(4.0, 5.0), 1)
-            )
-            members.append(member)
-            session.add(member)
-        session.commit()
-
-        # 3. Define Event Templates
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        
-        # Expanded templates for more variety
-        event_templates = [
-            {"title": "Monday Night Spikes", "loc": "City Indoor Arena", "type": "Indoor", "lvl": PlayLevel.INTERMEDIATE, "price": 2000},
-            {"title": "Sunset Beach Volley", "loc": "Margaret Island Sand", "type": "Outdoor", "lvl": PlayLevel.ALL, "price": 0},
-            {"title": "Advanced Pro 6v6", "loc": "Downtown Pro Center", "type": "Indoor", "lvl": PlayLevel.ADVANCED, "price": 3000},
-            {"title": "Beginner Bootcamp", "loc": "University Gym", "type": "Indoor", "lvl": PlayLevel.BEGINNER, "price": 1000},
-            {"title": "Weekend Sand Clash", "loc": "Lupa Beach", "type": "Outdoor", "lvl": PlayLevel.INTERMEDIATE, "price": 1500},
-            {"title": "Friday Night Draft", "loc": "BME Sport Center", "type": "Indoor", "lvl": PlayLevel.INTERMEDIATE, "price": 2500},
-            {"title": "Sunday Morning Drills", "loc": "Kopaszi Gát", "type": "Outdoor", "lvl": PlayLevel.ALL, "price": 1200},
-        ]
-
-        all_events = []
-        
-        print("Generating 4 past events for historical data...")
-        for i in range(1, 5):
-            tpl = random.choice(event_templates)
-            event = Event(
-                title=f"Past: {tpl['title']}",
-                description="A great match that already happened.",
-                start_time=now - timedelta(days=i*2),
-                end_time=now - timedelta(days=i*2) + timedelta(hours=2),
-                location_name=tpl['loc'],
-                max_players=random.choice([12, 14]),
-                price=tpl['price'],
-                level_required=tpl['lvl'],
-                host_id=random.choice([org1.id, org2.id]),
-                revolut_tag="vball_pay"
-            )
-            all_events.append(event)
-
-        print("Generating 10 diverse upcoming events...")
-        for i in range(1, 11):
-            tpl = random.choice(event_templates)
-            
-            # Randomize days ahead (next 21 days) and evening hours
-            days_ahead = random.randint(1, 21)
-            hour_start = random.choice([16, 18, 19, 20])
-            
-            # Create a clean start time (e.g. exactly 18:00:00)
-            event_start = (now + timedelta(days=days_ahead)).replace(hour=hour_start, minute=0, second=0, microsecond=0)
-
-            event = Event(
-                title=tpl['title'],
-                description="Join us for this upcoming match! Bring water and good vibes.",
-                start_time=event_start,
-                end_time=event_start + timedelta(hours=2),
-                location_name=tpl['loc'],
-                max_players=random.choice([10, 12, 14]),
-                price=tpl['price'],
-                level_required=tpl['lvl'],
-                host_id=random.choice([org1.id, admin.id]),
-                revolut_tag="vball_pay"
-            )
-            all_events.append(event)
-
-        session.add_all(all_events)
-        session.commit()
-
-        # 4. Populate RSVPs
-        print("Filing rosters and waitlists...")
-        for event in all_events:
-            is_past = event.start_time < now
-            
-            # Add Host
-            session.add(RSVP(user_id=event.host_id, event_id=event.id, status=RSVPStatus.CONFIRMED, attended=is_past))
-            
-            # Fill logic
-            if is_past:
-                # Past events are usually full
-                fill_count = event.max_players - 1
-                players = random.sample(members, fill_count)
-                for p in players:
-                    session.add(RSVP(user_id=p.id, event_id=event.id, status=RSVPStatus.CONFIRMED, attended=True))
-            else:
-                # Upcoming events: Some empty, some full, some waitlisted
-                fill_type = random.choice(["low", "medium", "full", "waitlisted"])
-                
-                if fill_type == "low":
-                    num = random.randint(1, 4)
-                elif fill_type == "medium":
-                    num = event.max_players // 2
-                elif fill_type == "full":
-                    num = event.max_players - 1
-                else: # Waitlisted
-                    num = event.max_players + random.randint(1, 4)
-                
-                players = random.sample(members, min(num, len(members)))
-                for idx, p in enumerate(players):
-                    status = RSVPStatus.CONFIRMED if idx < (event.max_players - 1) else RSVPStatus.WAITLISTED
-                    session.add(RSVP(user_id=p.id, event_id=event.id, status=status, attended=False))
-
-        session.commit()
-        print(f"✅ Database successfully populated with {len(all_events)} total events and 30+ users!")
+    print(f"✅ Successfully populated database with {len(events)} events!")
 
 if __name__ == "__main__":
     populate()

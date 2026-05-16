@@ -63,49 +63,50 @@ const Header = () => {
   const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : 'V';
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between px-4 z-50 shadow-sm transition-colors duration-200">
-      <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-app-bg border-b border-app-active flex items-center justify-between px-4 z-50 shadow-sm transition-colors duration-200">
+      <h1 className="text-xl font-bold text-app-text-primary transition-colors">
         {getPageTitle(pathname)}
       </h1>
 
       <div className="relative" ref={menuRef}>
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="w-10 h-10 rounded-full bg-blue-50 dark:bg-zinc-800 flex items-center justify-center overflow-hidden border-2 border-white dark:border-zinc-900 shadow-inner shrink-0 active:scale-90 transition-transform"
+          className="w-10 h-10 rounded-full bg-app-inset flex items-center justify-center overflow-hidden border-2 border-app-bg shadow-inner shrink-0 active:scale-90 transition-transform"
         >
           {user?.photo_url && !imageError ? (
             <img src={user.photo_url} alt="User" className="w-full h-full object-cover" onError={() => setImageError(true)} />
           ) : (
-            <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">{initial}</span>
+            <span className="text-app-accent font-bold text-lg">{initial}</span>
           )}
         </button>
 
         {isMenuOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 py-2 animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-4 py-1 border-b border-gray-50 dark:border-zinc-800 mb-1">
-              <p className="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Account</p>
+          <div className="absolute right-0 mt-2 w-48 bg-app-bg rounded-2xl shadow-xl border border-app-active py-2 animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-4 py-1 border-b border-app-active mb-1">
+              <p className="text-[10px] font-black text-app-text-secondary uppercase tracking-widest">Account</p>
             </div>
+            
             <Link 
               href="/profile" 
-              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-zinc-200 active:bg-gray-50 dark:active:bg-zinc-800 transition-colors" 
+              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-app-text-primary active:bg-app-active transition-colors" 
               onClick={() => setIsMenuOpen(false)}
             >
-              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-zinc-800 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <div className="w-8 h-8 rounded-lg bg-app-inset flex items-center justify-center text-app-accent">
                 <User size={18} />
               </div>
               <span className="flex-1">Profile</span>
-              <ChevronRight size={14} className="text-gray-300 dark:text-zinc-600" />
+              <ChevronRight size={14} className="text-app-text-secondary" />
             </Link>
             
             <button 
               onClick={() => { setIsSupportOpen(true); setIsMenuOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-zinc-200 active:bg-gray-50 dark:active:bg-zinc-800 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-app-text-primary active:bg-app-active transition-colors text-left"
             >
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-zinc-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <div className="w-8 h-8 rounded-lg bg-app-inset flex items-center justify-center text-app-accent">
                 <LifeBuoy size={18} />
               </div>
               <span className="flex-1">Support</span>
-              <ChevronRight size={14} className="text-gray-300 dark:text-zinc-600" />
+              <ChevronRight size={14} className="text-app-text-secondary" />
             </button>
           </div>
         )}
@@ -119,15 +120,15 @@ const Header = () => {
       >
         <div className="space-y-6 pb-10">
           {/* Type Selector */}
-          <div className="flex p-1 bg-gray-100 dark:bg-zinc-800 rounded-2xl transition-colors">
+          <div className="flex p-1 bg-app-inset rounded-2xl transition-colors">
             {(['request', 'review'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setSupportType(t)}
                 className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
                   supportType === t 
-                    ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm' 
-                    : 'text-gray-400 dark:text-zinc-400'
+                    ? 'bg-app-bg text-app-accent shadow-sm' 
+                    : 'text-app-text-secondary'
                 }`}
               >
                 {t === 'request' ? 'Bug / Request' : 'App Review'}
@@ -136,13 +137,13 @@ const Header = () => {
           </div>
 
           <div className="space-y-4">
-            <label className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">
+            <label className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest px-1">
               Your Message
             </label>
             <textarea 
               rows={4}
               placeholder={supportType === 'request' ? "What's on your mind?" : "Tell us what you think..."}
-              className="w-full bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-500 border-none rounded-3xl p-5 text-sm font-medium focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all resize-none"
+              className="w-full bg-app-inset text-app-text-primary placeholder:text-app-text-secondary border-none rounded-3xl p-5 text-sm font-medium focus:ring-2 focus:ring-app-accent outline-none transition-all resize-none"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onFocus={() => setFooterVisible?.(false)}
@@ -156,7 +157,7 @@ const Header = () => {
             className={`w-full py-4 rounded-2xl font-black text-base shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 ${
               isSuccess 
                 ? 'bg-emerald-500 text-white' 
-                : 'bg-blue-600 dark:bg-blue-500 text-white disabled:opacity-50 disabled:shadow-none'
+                : 'bg-app-accent text-white disabled:opacity-50 disabled:shadow-none'
             }`}
           >
             {isSending ? (
@@ -174,7 +175,7 @@ const Header = () => {
             )}
           </button>
           
-          <p className="text-center text-[10px] text-gray-400 dark:text-zinc-500 font-medium px-6 leading-relaxed">
+          <p className="text-center text-[10px] text-app-text-secondary font-medium px-6 leading-relaxed">
             Our team will review your message and get back to you via Telegram DM if needed.
           </p>
         </div>
