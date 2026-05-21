@@ -1,11 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
-import {
-  Star, ShieldCheck, Copy, Check, Bell,
-  Settings, Info, ChevronRight, Loader2,
-  CreditCard, MessageSquarePlus, Send, CheckCircle2
-} from "lucide-react";
+import { Star, ShieldCheck, Copy, Check, Bell, Settings, Info, ChevronRight, Loader2, CreditCard, MessageSquarePlus, Send, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import BottomSheet from "@/components/BottomSheet";
 import { api } from "@/lib/api";
@@ -99,8 +95,8 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-zinc-500">
-        <Loader2 className="animate-spin mb-4 text-blue-500" size={32} />
+      <div className="flex flex-col items-center justify-center h-64 text-app-text-secondary">
+        <Loader2 className="animate-spin mb-4 text-app-accent" size={32} />
         <p>Loading Profile...</p>
       </div>
     );
@@ -109,19 +105,19 @@ export default function ProfilePage() {
   const initial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : '';
 
   const menuItems = [
-    { id: 'notifications', label: 'Notification Settings', icon: Bell, color: 'text-blue-500 dark:text-blue-400' },
-    { id: 'preferences', label: 'App Preferences', icon: Settings, color: 'text-gray-500 dark:text-zinc-400' },
-    { id: 'support', label: 'Support & Review', icon: MessageSquarePlus, color: 'text-amber-500 dark:text-amber-400' },
-    { id: 'about', label: 'Credentials & About', icon: Info, color: 'text-emerald-500 dark:text-emerald-400' },
+    { id: 'notifications', label: 'Notification Settings', icon: Bell, color: 'text-app-accent' },
+    { id: 'preferences', label: 'App Preferences', icon: Settings, color: 'text-app-text-secondary' },
+    { id: 'support', label: 'Support & Review', icon: MessageSquarePlus, color: 'text-amber-500' },
+    { id: 'about', label: 'Credentials & About', icon: Info, color: 'text-emerald-500' },
   ];
 
   const ToggleRow = ({ label, description, active, onClick }: any) => (
     <div className="flex items-center justify-between py-4 group cursor-pointer" onClick={onClick}>
       <div className="flex-1 pr-4">
-        <p className="text-[15px] font-bold text-gray-800 dark:text-zinc-200 leading-tight">{label}</p>
-        <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">{description}</p>
+        <p className="text-[15px] font-bold text-app-text-primary leading-tight">{label}</p>
+        <p className="text-xs text-app-text-secondary mt-1">{description}</p>
       </div>
-      <div className={`w-11 h-6 rounded-full transition-colors duration-200 relative ${active ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-zinc-700'}`}>
+      <div className={`w-11 h-6 rounded-full transition-colors duration-200 relative ${active ? 'bg-app-accent' : 'bg-app-active'}`}>
         <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 shadow-sm ${active ? 'translate-x-5' : 'translate-x-0'}`} />
       </div>
     </div>
@@ -130,10 +126,10 @@ export default function ProfilePage() {
   return (
     <div className="py-3 space-y-6 animate-in fade-in duration-500 pb-24">
       {/* Identity Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-[32px] p-6 shadow-sm border border-gray-100 dark:border-zinc-800 transition-colors">
+      <div className="bg-app-bg rounded-[32px] p-6 shadow-sm border border-app-active transition-colors">
         <div className="flex items-center justify-between mb-4">
           <div className="flex flex-col justify-center">
-            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
+            <h2 className="text-2xl font-extrabold text-app-text-primary tracking-tight leading-tight">
               {user?.first_name || "Guest"} {user?.last_name || ""}
             </h2>
             {user?.username && (
@@ -143,53 +139,53 @@ export default function ProfilePage() {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-sm mt-1 bg-blue-50/50 dark:bg-blue-900/20 px-2.5 py-1 rounded-lg w-fit active:scale-95 transition-all"
+                className="flex items-center gap-1.5 text-app-accent font-semibold text-sm mt-1 bg-app-inset px-2.5 py-1 rounded-lg w-fit active:scale-95 transition-all"
               >
                 @{user.username}
                 {copied ? <Check size={14} /> : <Copy size={14} className="opacity-60" />}
               </button>
             )}
           </div>
-          <div className="w-20 h-20 rounded-full bg-blue-50 dark:bg-zinc-800 flex items-center justify-center border-4 border-zinc-50 dark:border-zinc-900 shrink-0 overflow-hidden transition-colors">
-            {user?.photo_url ? <img src={user.photo_url} className="w-full h-full object-cover" alt="Avatar" /> : <span className="text-blue-600 dark:text-blue-400 font-bold text-3xl">{initial}</span>}
+          <div className="w-20 h-20 rounded-full bg-app-inset flex items-center justify-center border-4 border-app-bg shrink-0 overflow-hidden transition-colors">
+            {user?.photo_url ? <img src={user.photo_url} className="w-full h-full object-cover" alt="Avatar" /> : <span className="text-app-accent font-bold text-3xl">{initial}</span>}
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 border border-gray-100/50 dark:border-zinc-700/50 text-center transition-colors">
-            <div className="flex items-center justify-center text-blue-600 dark:text-blue-400 mb-1">
+          <div className="bg-app-inset rounded-2xl p-4 border border-app-active text-center transition-colors">
+            <div className="flex items-center justify-center text-app-accent mb-1">
               <ShieldCheck size={16} className="mr-1.5" />
               <span className="text-[10px] uppercase font-black opacity-50">Level</span>
             </div>
-            <p className="font-bold text-gray-900 dark:text-zinc-100">{level}</p>
+            <p className="font-bold text-app-text-primary">{level}</p>
           </div>
-          <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-4 border border-gray-100/50 dark:border-zinc-700/50 text-center transition-colors">
-            <div className="flex items-center justify-center text-amber-500 dark:text-amber-400 mb-1">
-              <Star size={16} className="mr-1.5 fill-amber-500 dark:fill-amber-400" />
+          <div className="bg-app-inset rounded-2xl p-4 border border-app-active text-center transition-colors">
+            <div className="flex items-center justify-center text-amber-500 mb-1">
+              <Star size={16} className="mr-1.5 fill-current" />
               <span className="text-[10px] uppercase font-black opacity-50">Behavior</span>
             </div>
-            <p className="font-bold text-gray-900 dark:text-zinc-100">{rating} / 5.0</p>
+            <p className="font-bold text-app-text-primary">{rating} / 5.0</p>
           </div>
         </div>
       </div>
 
       {/* Main Menu List */}
-      <div className="bg-white dark:bg-zinc-900 rounded-[32px] overflow-hidden border border-gray-100 dark:border-zinc-800 shadow-sm transition-colors">
-        <div className="px-6 py-4 border-b border-gray-50 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest transition-colors">
+      <div className="bg-app-bg rounded-[32px] overflow-hidden border border-app-active shadow-sm transition-colors">
+        <div className="px-6 py-4 border-b border-app-active bg-app-inset text-[11px] font-black text-app-text-secondary uppercase tracking-widest transition-colors">
           Account Settings
         </div>
-        <div className="divide-y divide-gray-50 dark:divide-zinc-800">
+        <div className="divide-y divide-app-active">
           {menuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveView(item.id)}
-              className="w-full flex items-center gap-4 px-6 py-5 transition-all active:bg-zinc-50 dark:active:bg-zinc-800 group text-left"
+              className="w-full flex items-center gap-4 px-6 py-5 transition-all active:bg-app-inset group text-left"
             >
-              <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 transition-colors">
+              <div className="p-2 rounded-xl bg-app-inset transition-colors">
                 <item.icon size={20} className={item.color} />
               </div>
-              <span className="flex-1 text-[15px] font-semibold text-gray-700 dark:text-zinc-200">{item.label}</span>
-              <ChevronRight size={18} className="text-gray-300 dark:text-zinc-600" />
+              <span className="flex-1 text-[15px] font-semibold text-app-text-primary">{item.label}</span>
+              <ChevronRight size={18} className="text-app-text-secondary" />
             </button>
           ))}
         </div>
@@ -201,7 +197,7 @@ export default function ProfilePage() {
         title={menuItems.find(i => i.id === activeView)?.label || ""}
       >
         {activeView === 'notifications' && (
-          <div className="space-y-1 divide-y divide-gray-50 dark:divide-zinc-800 pb-6">
+          <div className="space-y-1 divide-y divide-app-active pb-6">
             <ToggleRow label="New Games Alerts" description="Be the first to know when a new court is booked." active={notifications.newEvents} onClick={() => toggleSetting('newEvents', 'notif_new_events')} />
             <ToggleRow label="Waitlist Updates" description="Get a DM when you are promoted from the waitlist." active={notifications.waitlist} onClick={() => toggleSetting('waitlist', 'notif_waitlist')} />
             <ToggleRow label="Game Reminders" description="We will send a reminder 2 hours before the whistle." active={notifications.reminders} onClick={() => toggleSetting('reminders', 'notif_reminders')} />
@@ -212,10 +208,10 @@ export default function ProfilePage() {
         {activeView === 'preferences' && (
           <div className="space-y-6 pb-6">
             <div>
-              <p className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-3 px-1">
+              <p className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest mb-3 px-1">
                 Role Management (Live Sync)
               </p>
-              <div className={`flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-2xl transition-all duration-200 ${isUpdatingRole ? 'opacity-60' : 'opacity-100'}`}>
+              <div className={`flex p-1 bg-app-inset rounded-2xl transition-all duration-200 ${isUpdatingRole ? 'opacity-60' : 'opacity-100'}`}>
                 {(['member', 'organizer', 'admin'] as const).map((r) => {
                   const isActive = role === r;
                   return (
@@ -224,8 +220,8 @@ export default function ProfilePage() {
                       disabled={isUpdatingRole || isActive}
                       onClick={() => handleRoleChange(r)}
                       className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${isActive
-                          ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                          : 'text-gray-400 dark:text-zinc-500 hover:text-gray-600 active:bg-zinc-200/50 dark:active:bg-zinc-700/50'
+                          ? 'bg-app-bg text-app-accent shadow-sm'
+                          : 'text-app-text-secondary hover:text-app-text-primary active:bg-app-active'
                         }`}
                     >
                       {isUpdatingRole && !isActive && <Loader2 size={12} className="animate-spin" />}
@@ -236,20 +232,20 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="pt-6 border-t border-gray-100 dark:border-zinc-800">
-              <p className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-3 px-1">
+            <div className="pt-6 border-t border-app-active">
+              <p className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest mb-3 px-1">
                 Payment Preferences
               </p>
-              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-gray-100/50 dark:border-zinc-700/50 transition-colors">
-                <label className="flex items-center text-sm font-bold text-gray-700 dark:text-zinc-300 mb-2">
-                  <CreditCard size={16} className="mr-2 text-blue-500 dark:text-blue-400" /> Revolut Tag (Autofill)
+              <div className="bg-app-inset p-4 rounded-2xl border border-app-active transition-colors">
+                <label className="flex items-center text-sm font-bold text-app-text-primary mb-2">
+                  <CreditCard size={16} className="mr-2 text-app-accent" /> Revolut Tag (Autofill)
                 </label>
                 <input
                   type="text"
                   placeholder="@yourtag"
                   value={revolutTag}
                   onChange={(e) => setRevolutTag(e.target.value)}
-                  className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-3 outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-medium"
+                  className="w-full bg-app-bg border border-app-active rounded-xl px-4 py-3 outline-none text-app-text-primary placeholder:text-app-text-secondary focus:border-app-accent focus:ring-2 focus:ring-app-accent/20 transition-all text-sm font-medium"
                 />
               </div>
             </div>
@@ -258,15 +254,15 @@ export default function ProfilePage() {
 
         {activeView === 'support' && (
           <div className="space-y-6 pb-10">
-            <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-2xl transition-colors">
+            <div className="flex p-1 bg-app-inset rounded-2xl transition-colors">
               {(['request', 'review'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setSupportType(t)}
                   className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
                     supportType === t 
-                      ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm' 
-                      : 'text-gray-400 dark:text-zinc-500'
+                      ? 'bg-app-bg text-app-accent shadow-sm' 
+                      : 'text-app-text-secondary'
                   }`}
                 >
                   {t === 'request' ? 'Bug / Request' : 'App Review'}
@@ -275,13 +271,13 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-4">
-              <label className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">
+              <label className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest px-1">
                 Your Message
               </label>
               <textarea 
                 rows={4}
                 placeholder={supportType === 'request' ? "What's on your mind?" : "Tell us what you think..."}
-                className="w-full bg-zinc-50 dark:bg-zinc-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 border-none rounded-3xl p-5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                className="w-full bg-app-inset text-app-text-primary placeholder:text-app-text-secondary border-none rounded-3xl p-5 text-sm font-medium focus:ring-2 focus:ring-app-accent outline-none transition-all resize-none"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onFocus={() => setFooterVisible?.(false)}
@@ -295,7 +291,7 @@ export default function ProfilePage() {
               className={`w-full py-4 rounded-2xl font-black text-base shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
                 isSuccess 
                   ? 'bg-emerald-500 text-white' 
-                  : 'bg-blue-600 dark:bg-blue-500 text-white disabled:opacity-50'
+                  : 'bg-app-accent text-white disabled:opacity-50'
               }`}
             >
               {isSending ? (
@@ -312,11 +308,11 @@ export default function ProfilePage() {
         {activeView === 'about' && (
           <div className="space-y-4 text-center pb-6">
             <div className="text-5xl mb-4 drop-shadow-sm">🏐</div>
-            <h4 className="font-black text-2xl text-gray-900 dark:text-white">VolleyballAlley</h4>
-            <p className="text-sm text-gray-500 dark:text-zinc-400 px-4 leading-relaxed font-medium">
+            <h4 className="font-black text-2xl text-app-text-primary">VolleyballAlley</h4>
+            <p className="text-sm text-app-text-secondary px-4 leading-relaxed font-medium">
               Crafted for players by players. Our goal is to simplify match organization so you can focus on the game.
             </p>
-            <div className="text-[10px] text-gray-300 dark:text-zinc-700 uppercase font-black tracking-widest pt-4">
+            <div className="text-[10px] text-app-text-secondary uppercase font-black tracking-widest pt-4">
               Version 1.0.0-beta
             </div>
           </div>
