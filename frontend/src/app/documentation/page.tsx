@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Search, BookOpen, Server, User, Settings, Globe, ChevronDown } from 'lucide-react';
+import { Search, BookOpen, Server, User, Settings, Globe, ChevronDown, CalendarDays } from 'lucide-react';
 
 // Import Modular Sections
 import { OverviewSection } from './_sections/OverviewSection';
@@ -10,19 +10,20 @@ import { ArchitectureSection } from './_sections/ArchitectureSection';
 import { ProfileSection } from './_sections/ProfileSection';
 import { OrganizerSection } from './_sections/OrganizerSection';
 import { BrowseSection } from './_sections/BrowseSection';
+import { MyGamesSection } from './_sections/MyGamesSection';
 
 export default function DocumentationPage() {
     const [activeSection, setActiveSection] = useState('overview');
     const [expandedMenus, setExpandedMenus] = useState({
-        profile: true,
-        organizer: false
+        profile: false,
+        organizer: false,
+        myGames: true // Keep open for clear structural visibility over newly appended paths
     });
 
-    const toggleMenu = (menu: 'profile' | 'organizer') => {
+    const toggleMenu = (menu: 'profile' | 'organizer' | 'myGames') => {
         setExpandedMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
     };
 
-    // Helper to switch view states and execute a smooth native anchor scroll jump transition
     const handleAnchorClick = (sectionId: string, elementId: string) => {
         setActiveSection(sectionId);
         setTimeout(() => {
@@ -47,7 +48,7 @@ export default function DocumentationPage() {
 
     return (
         <div className="text-slate-900 overflow-hidden h-screen flex flex-col bg-slate-50">
-            {/* Inject Custom Global Layout Engine Markdown Prose Styles */}
+            {/* Custom Global Layout Engine Markdown Prose Styles */}
             <style>{`
                 ::-webkit-scrollbar { width: 6px; height: 6px; }
                 ::-webkit-scrollbar-track { background: transparent; }
@@ -117,11 +118,8 @@ export default function DocumentationPage() {
                                 <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.profile ? 'block' : 'hidden'}`}>
                                     <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200"></div>
                                     <li><button onClick={() => setActiveSection('profile-overview')} className={getNavLinkClass('profile-overview', true)}>Page Overview</button></li>
-                                    
-                                    {/* Anchor Specific Jumps inside Overview */}
                                     <li><button onClick={() => handleAnchorClick('profile-overview', 'info-card')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Info Card Details</button></li>
-                                    <li><button onClick={() => handleAnchorClick('profile-overview', 'account-settings')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors gap-1">• Account Settings</button></li>
-                                    
+                                    <li><button onClick={() => handleAnchorClick('profile-overview', 'account-settings')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Account Settings</button></li>
                                     <li><button onClick={() => setActiveSection('profile-auth')} className={getNavLinkClass('profile-auth', true)}>Telegram Auth Flow</button></li>
                                     <li><button onClick={() => setActiveSection('profile-roles')} className={getNavLinkClass('profile-roles', true)}>Role Switching</button></li>
                                 </ul>
@@ -131,14 +129,35 @@ export default function DocumentationPage() {
                             <div>
                                 <button onClick={() => toggleMenu('organizer')} className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <Settings size={18} /> Organizer Tools
+                                        <Settings size={18} /> Organizer Page
                                     </div>
                                     <ChevronDown size={16} className={`transition-transform duration-200 ${expandedMenus.organizer ? 'rotate-0' : '-rotate-90'}`} />
                                 </button>
                                 <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.organizer ? 'block' : 'hidden'}`}>
                                     <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200"></div>
+                                    <li><button onClick={() => setActiveSection('org-overview')} className={getNavLinkClass('org-overview', true)}>Page Overview</button></li>
+                                    <li><button onClick={() => handleAnchorClick('org-overview', 'dashboard-layout')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Dashboard Panel</button></li>
+                                    <li><button onClick={() => handleAnchorClick('org-overview', 'hosted-cards')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Hosted Event Cards</button></li>
                                     <li><button onClick={() => setActiveSection('org-create')} className={getNavLinkClass('org-create', true)}>Creating Events</button></li>
                                     <li><button onClick={() => setActiveSection('org-manage')} className={getNavLinkClass('org-manage', true)}>Managing Rosters</button></li>
+                                </ul>
+                            </div>
+
+                            {/* Dropdown: My Games */}
+                            <div>
+                                <button onClick={() => toggleMenu('myGames')} className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <CalendarDays size={18} /> My Games Page
+                                    </div>
+                                    <ChevronDown size={16} className={`transition-transform duration-200 ${expandedMenus.myGames ? 'rotate-0' : '-rotate-90'}`} />
+                                </button>
+                                <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.myGames ? 'block' : 'hidden'}`}>
+                                    <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200"></div>
+                                    <li><button onClick={() => setActiveSection('mygames-overview')} className={getNavLinkClass('mygames-overview', true)}>Page Overview</button></li>
+                                    <li><button onClick={() => handleAnchorClick('mygames-overview', 'stats-summary')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Stats Cards Panel</button></li>
+                                    <li><button onClick={() => handleAnchorClick('mygames-overview', 'schedule-timeline')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Schedule Timeline</button></li>
+                                    <li><button onClick={() => setActiveSection('mygames-stats')} className={getNavLinkClass('mygames-stats', true)}>Analytics Processing</button></li>
+                                    <li><button onClick={() => setActiveSection('mygames-schedule')} className={getNavLinkClass('mygames-schedule', true)}>Schedule Operations</button></li>
                                 </ul>
                             </div>
 
@@ -157,8 +176,12 @@ export default function DocumentationPage() {
                         {activeSection === 'profile-overview' && <ProfileSection subsection="overview" />}
                         {activeSection === 'profile-auth' && <ProfileSection subsection="auth" />}
                         {activeSection === 'profile-roles' && <ProfileSection subsection="roles" />}
+                        {activeSection === 'org-overview' && <OrganizerSection subsection="overview" />}
                         {activeSection === 'org-create' && <OrganizerSection subsection="create" />}
                         {activeSection === 'org-manage' && <OrganizerSection subsection="manage" />}
+                        {activeSection === 'mygames-overview' && <MyGamesSection subsection="overview" />}
+                        {activeSection === 'mygames-stats' && <MyGamesSection subsection="stats" />}
+                        {activeSection === 'mygames-schedule' && <MyGamesSection subsection="schedule" />}
                         {activeSection === 'browse' && <BrowseSection />}
                     </div>
                 </main>
