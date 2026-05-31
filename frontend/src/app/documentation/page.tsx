@@ -14,12 +14,23 @@ import { BrowseSection } from './_sections/BrowseSection';
 export default function DocumentationPage() {
     const [activeSection, setActiveSection] = useState('overview');
     const [expandedMenus, setExpandedMenus] = useState({
-        profile: false,
+        profile: true,
         organizer: false
     });
 
     const toggleMenu = (menu: 'profile' | 'organizer') => {
         setExpandedMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
+    };
+
+    // Helper to switch view states and execute a smooth native anchor scroll jump transition
+    const handleAnchorClick = (sectionId: string, elementId: string) => {
+        setActiveSection(sectionId);
+        setTimeout(() => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 50);
     };
 
     const getNavLinkClass = (sectionId: string, isNested = false) => {
@@ -105,6 +116,12 @@ export default function DocumentationPage() {
                                 </button>
                                 <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.profile ? 'block' : 'hidden'}`}>
                                     <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200"></div>
+                                    <li><button onClick={() => setActiveSection('profile-overview')} className={getNavLinkClass('profile-overview', true)}>Page Overview</button></li>
+                                    
+                                    {/* Anchor Specific Jumps inside Overview */}
+                                    <li><button onClick={() => handleAnchorClick('profile-overview', 'info-card')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Info Card Details</button></li>
+                                    <li><button onClick={() => handleAnchorClick('profile-overview', 'account-settings')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors gap-1">• Account Settings</button></li>
+                                    
                                     <li><button onClick={() => setActiveSection('profile-auth')} className={getNavLinkClass('profile-auth', true)}>Telegram Auth Flow</button></li>
                                     <li><button onClick={() => setActiveSection('profile-roles')} className={getNavLinkClass('profile-roles', true)}>Role Switching</button></li>
                                 </ul>
@@ -137,6 +154,7 @@ export default function DocumentationPage() {
                     <div className="max-w-4xl mx-auto px-8 py-12 prose">
                         {activeSection === 'overview' && <OverviewSection />}
                         {activeSection === 'architecture' && <ArchitectureSection />}
+                        {activeSection === 'profile-overview' && <ProfileSection subsection="overview" />}
                         {activeSection === 'profile-auth' && <ProfileSection subsection="auth" />}
                         {activeSection === 'profile-roles' && <ProfileSection subsection="roles" />}
                         {activeSection === 'org-create' && <OrganizerSection subsection="create" />}
