@@ -7,6 +7,7 @@ import EventDetailsSheet from '@/components/EventDetailsSheet';
 import { useUser } from '@/context/UserContext';
 import { api } from '@/lib/api';
 
+// Matches backend PlayLevel enums exactly (All, Beginner, Intermediate, Advanced)
 const FILTERS = ["All", "Indoor", "Outdoor", "Beginner", "Intermediate", "Advanced"];
 
 export default function BrowsePage() {
@@ -19,12 +20,11 @@ export default function BrowsePage() {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
 
-    // Bulletproof Time Helper to satisfy TypeScript and Timezones
+    // Reliable UTC calculation string helper
     const getGameTime = (g: any) => {
-        const timeString = g.start_time || g.rawDate;
+        const timeString = g.start_time;
         if (!timeString) return 0;
         
-        // Add 'Z' if FastAPI forgot it, ensuring our sorting math is strictly UTC
         const safeString = timeString.endsWith('Z') || timeString.match(/[+-]\d{2}:\d{2}$/) 
             ? timeString 
             : `${timeString}Z`;
@@ -34,32 +34,36 @@ export default function BrowsePage() {
 
     const loadEvents = async () => {
         try {
+            setIsLoading(true);
             const data = await api.getEvents();
             const mappedGames: Game[] = data.map((dbEvent: any) => {
                 const attendees = dbEvent.attendees || [];
                 const confirmed = attendees.filter((a: any) => a.status === 'confirmed');
                 const userRegistration = attendees.find((a: any) => a.user_id === user?.id);
                 const isUserHost = dbEvent.host_id === user?.id;
+                
                 const startDate = new Date(dbEvent.start_time);
                 const endDate = new Date(dbEvent.end_time || dbEvent.start_time);
                 const locName = dbEvent.location_name || "Location TBD";
+                
+                // Automatically determine court type based on location strings
                 const isSand = locName.toLowerCase().includes('sand') || locName.toLowerCase().includes('beach');
+                const computedType = dbEvent.type || (isSand ? 'Outdoor' : 'Indoor');
 
                 return {
                     id: String(dbEvent.id),
-                    type: dbEvent.type || (isSand ? 'Outdoor' : 'Indoor'),
+                    type: computedType,
                     level: dbEvent.level_required || 'All',
                     title: dbEvent.title || "Untitled Match",
                     description: dbEvent.description,
-                    rawDate: dbEvent.start_time,
-                    start_time: dbEvent.start_time, // Passed explicitly for our robust EventCard
-                    end_time: dbEvent.end_time,     // Passed explicitly for our robust EventCard
+                    start_time: dbEvent.start_time, 
+                    end_time: dbEvent.end_time,     
                     date: startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
                     time: `${startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`,
                     currentPlayers: confirmed.length,
-                    maxPlayers: dbEvent.max_players,
-                    hostName: isUserHost ? "You" : "Organizer",
-                    price: dbEvent.price === 0 ? "Free" : `${dbEvent.price} HUF`,
+                    maxPlayers: dbEvent.max_players || 12,
+                    hostName: isUserHost ? "You" : (dbEvent.host?.first_name || "Organizer"),
+                    price: !dbEvent.price || dbEvent.price === 0 ? "Free" : `${dbEvent.price} HUF`,
                     location: locName,
                     revolutTag: dbEvent.revolut_tag || undefined,
                     isHost: isUserHost,
@@ -68,69 +72,132 @@ export default function BrowsePage() {
                 };
             });
 
-            // Filter out games that ended > 6 hours ago, and sort by chronological start time
+            // Keep matches that are ongoing or ended less than 6 hours ago
             const upcomingGames = mappedGames.filter(g => {
                 const time = getGameTime(g);
                 return time > 0 && (time + (6 * 60 * 60 * 1000)) > Date.now();
             }).sort((a, b) => getGameTime(a) - getGameTime(b));
 
             setLiveGames(upcomingGames);
+
+            // Sync structural modal popup data updates if open
             if (selectedGame) {
-                const refreshed = mappedGames.find(g => g.id === selectedGame.id);
-                if (refreshed) setSelectedGame(refreshed);
+                const refreshed = upcomingGames.find(g => g.id === selectedGame.id);
+                setSelectedGame(refreshed || null);
             }
-        } catch (error) { console.error(error); } finally { setIsLoading(false); }
+        } catch (error) { 
+            console.error("Failed to parse event vectors:", error); 
+        } finally { 
+            setIsLoading(false); 
+        }
     };
 
-    useEffect(() => { loadEvents(); }, [user]);
+    useEffect(() => { 
+        loadEvents(); 
+    }, [user]);
 
     const filteredGames = useMemo(() => {
         return liveGames.filter(game => {
-            const matchesFilter = activeFilter === "All" || game.type === activeFilter || game.level === activeFilter;
-            const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase()) || game.location.toLowerCase().includes(searchQuery.toLowerCase());
+            // Checks both backend enum types (Indoor/Outdoor and Beginner/Intermediate/Advanced)
+            const matchesFilter = activeFilter === "All" || 
+                                 game.type === activeFilter || 
+                                 game.level.toLowerCase() === activeFilter.toLowerCase();
+                                 
+            const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                 game.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                 game.hostName.toLowerCase().includes(searchQuery.toLowerCase());
+                                 
             return matchesFilter && matchesSearch;
         });
     }, [searchQuery, activeFilter, liveGames]);
 
-    const handleRsvp = async (gameId: string) => { try { await api.joinEvent(gameId); loadEvents(); } catch (e) { console.error(e); } };
-    const handleCancelRsvp = async (gameId: string) => { try { setIsCancelling(true); await api.leaveEvent(gameId); loadEvents(); } catch (e) { console.error(e); } finally { setIsCancelling(false); } };
+    // FIXED: Use exact joinEvent endpoint from your api.ts
+    const handleRsvp = async (gameId: string) => { 
+        try { 
+            await api.joinEvent(gameId); 
+            await loadEvents(); 
+        } catch (e) { 
+            console.error(e); 
+        } 
+    };
+
+    // FIXED: Use exact leaveEvent endpoint from your api.ts
+    const handleCancelRsvp = async (gameId: string) => { 
+        try { 
+            setIsCancelling(true); 
+            await api.leaveEvent(gameId); 
+            await loadEvents(); 
+        } catch (e) { 
+            console.error(e); 
+        } finally { 
+            setIsCancelling(false); 
+        } 
+    };
 
     return (
         <div className="py-3 space-y-4 animate-in fade-in duration-500 pb-24">
+            {/* Search Input bar */}
             <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" size={20} />
                 <input
-                    type="text" placeholder="Search matches..."
+                    type="text" 
+                    placeholder="Search matches, locations, hosts..."
                     className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-full py-3.5 pl-12 pr-4 text-[15px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
                     value={searchQuery}
-                    onFocus={() => setFooterVisible?.(false)} onBlur={() => setFooterVisible?.(true)}
+                    onFocus={() => setFooterVisible?.(false)} 
+                    onBlur={() => setFooterVisible?.(true)}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
 
+            {/* Horizontal Toggle filter bar */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
                 {FILTERS.map((f) => (
-                    <button key={f} onClick={() => setActiveFilter(f)} className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-semibold transition-all ${activeFilter === f ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md' : 'bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700'}`}>{f}</button>
+                    <button 
+                        key={f} 
+                        onClick={() => setActiveFilter(f)} 
+                        className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+                            activeFilter === f 
+                                ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md' 
+                                : 'bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700'
+                        }`}
+                    >
+                        {f}
+                    </button>
                 ))}
             </div>
 
+            {/* Card output matrix window */}
             <div className="space-y-4">
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-gray-400"><Loader2 className="animate-spin mb-4 text-blue-500" size={32} /><p>Finding matches...</p></div>
+                    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                        <Loader2 className="animate-spin mb-4 text-blue-500" size={32} />
+                        <p>Finding matches...</p>
+                    </div>
                 ) : filteredGames.length > 0 ? (
                     filteredGames.map((game) => (
                         <GameCard key={game.id} game={game} onClick={() => setSelectedGame(game)} />
                     ))
                 ) : (
                     <div className="bg-white dark:bg-zinc-900 rounded-[32px] p-12 border border-dashed border-gray-200 dark:border-zinc-800 text-center transition-colors">
-                        <div className="w-16 h-16 bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4"><Info className="text-gray-300 dark:text-zinc-700" size={32} /></div>
+                        <div className="w-16 h-16 bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Info className="text-gray-300 dark:text-zinc-700" size={32} />
+                        </div>
                         <h3 className="text-gray-900 dark:text-white font-bold mb-1">No matches found</h3>
-                        <p className="text-gray-400 dark:text-zinc-500 text-xs font-medium">Try adjusting your filters.</p>
+                        <p className="text-gray-400 dark:text-zinc-500 text-xs font-medium">Try adjusting your filters or search keywords.</p>
                     </div>
                 )}
             </div>
 
-            <EventDetailsSheet isOpen={!!selectedGame} onClose={() => setSelectedGame(null)} game={selectedGame} onRsvp={handleRsvp} onCancelRsvp={handleCancelRsvp} isCancelling={isCancelling} />
+            {/* Event Overlay Drawer Sheet */}
+            <EventDetailsSheet 
+                isOpen={!!selectedGame} 
+                onClose={() => setSelectedGame(null)} 
+                game={selectedGame} 
+                onRsvp={handleRsvp} 
+                onCancelRsvp={handleCancelRsvp} 
+                isCancelling={isCancelling} 
+            />
         </div>
     );
 }
