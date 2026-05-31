@@ -12,7 +12,7 @@ export function HomeSection({ subsection }: HomeSectionProps) {
     const componentLayoutColumns = [
       { header: "Interface Component Block", accessor: "block" },
       { header: "Visual Mapping & Actions", accessor: "mapping" },
-      { header: "Routing Target / Link Workflow" }
+      { header: "Routing Target / Link Workflow", accessor: "technical" }
     ];
 
     const componentLayoutData = [
