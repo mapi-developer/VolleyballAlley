@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Search, BookOpen, Server, User, Settings, Globe, ChevronDown, CalendarDays } from 'lucide-react';
+import { Search, BookOpen, Server, User, Settings, Globe, ChevronDown, CalendarDays, Home } from 'lucide-react';
 
 // Import Modular Sections
 import { OverviewSection } from './_sections/OverviewSection';
@@ -11,16 +11,19 @@ import { ProfileSection } from './_sections/ProfileSection';
 import { OrganizerSection } from './_sections/OrganizerSection';
 import { BrowseSection } from './_sections/BrowseSection';
 import { MyGamesSection } from './_sections/MyGamesSection';
+import { HomeSection } from './_sections/HomeSection';
 
 export default function DocumentationPage() {
     const [activeSection, setActiveSection] = useState('overview');
     const [expandedMenus, setExpandedMenus] = useState({
-        profile: false,
+        home: false, // Focus view parameters directly on newly appended layout tools on initialization
+        browse: false,
+        myGames: false,
         organizer: false,
-        myGames: true // Keep open for clear structural visibility over newly appended paths
+        profile: false
     });
 
-    const toggleMenu = (menu: 'profile' | 'organizer' | 'myGames') => {
+    const toggleMenu = (menu: 'home' | 'browse' | 'myGames' | 'organizer' | 'profile') => {
         setExpandedMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
     };
 
@@ -48,7 +51,7 @@ export default function DocumentationPage() {
 
     return (
         <div className="text-slate-900 overflow-hidden h-screen flex flex-col bg-slate-50">
-            {/* Custom Global Layout Engine Markdown Prose Styles */}
+            {/* Inject Custom Global Layout Engine Markdown Prose Styles */}
             <style>{`
                 ::-webkit-scrollbar { width: 6px; height: 6px; }
                 ::-webkit-scrollbar-track { background: transparent; }
@@ -64,6 +67,9 @@ export default function DocumentationPage() {
                 .prose ol { list-style-type: decimal; }
                 .prose li { margin-bottom: 0.5rem; }
                 .prose code { background-color: #f1f5f9; color: #0f172a; padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.875em; font-family: monospace; border: 1px solid #e2e8f0; }
+                .prose table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.875rem; }
+                .prose th { text-align: left; padding: 0.75rem 1rem; border-bottom: 2px solid #e2e8f0; color: #1e293b; font-weight: 600; }
+                .prose td { padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; color: #475569; }
                 .prose pre { background-color: #0f172a; color: #f8fafc; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1.5rem; font-family: monospace; font-size: 0.875rem; line-height: 1.5;}
                 .prose pre code { background-color: transparent; color: inherit; padding: 0; border: none; }
             `}</style>
@@ -107,39 +113,40 @@ export default function DocumentationPage() {
                             <div className="h-px bg-slate-200 my-4"></div>
                             <h3 className="px-3 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Features</h3>
 
-                            {/* Dropdown: Profile Page */}
+                            {/* Dropdown: Home Page */}
                             <div>
-                                <button onClick={() => toggleMenu('profile')} className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+                                <button onClick={() => toggleMenu('home')} className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <User size={18} /> Profile Page
+                                        <Home size={18} /> Home Page
                                     </div>
-                                    <ChevronDown size={16} className={`transition-transform duration-200 ${expandedMenus.profile ? 'rotate-0' : '-rotate-90'}`} />
+                                    <ChevronDown size={16} className={`transition-transform duration-200 ${expandedMenus.home ? 'rotate-0' : '-rotate-90'}`} />
                                 </button>
-                                <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.profile ? 'block' : 'hidden'}`}>
+                                <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.home ? 'block' : 'hidden'}`}>
                                     <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200"></div>
-                                    <li><button onClick={() => setActiveSection('profile-overview')} className={getNavLinkClass('profile-overview', true)}>Page Overview</button></li>
-                                    <li><button onClick={() => handleAnchorClick('profile-overview', 'info-card')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Info Card Details</button></li>
-                                    <li><button onClick={() => handleAnchorClick('profile-overview', 'account-settings')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Account Settings</button></li>
-                                    <li><button onClick={() => setActiveSection('profile-auth')} className={getNavLinkClass('profile-auth', true)}>Telegram Auth Flow</button></li>
-                                    <li><button onClick={() => setActiveSection('profile-roles')} className={getNavLinkClass('profile-roles', true)}>Role Switching</button></li>
+                                    <li><button onClick={() => setActiveSection('home-overview')} className={getNavLinkClass('home-overview', true)}>Page Overview</button></li>
+                                    <li><button onClick={() => handleAnchorClick('home-overview', 'perf-metrics')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Player Metrics</button></li>
+                                    <li><button onClick={() => handleAnchorClick('home-overview', 'next-up')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Next Up Card</button></li>
+                                    <li><button onClick={() => handleAnchorClick('home-overview', 'open-matches')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Open Matches</button></li>
+                                    <li><button onClick={() => setActiveSection('home-api')} className={getNavLinkClass('home-api', true)}>REST Integration</button></li>
                                 </ul>
                             </div>
 
-                            {/* Dropdown: Organizer Tools */}
+                            {/* Dropdown: Browse Games Feed */}
                             <div>
-                                <button onClick={() => toggleMenu('organizer')} className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+                                <button onClick={() => toggleMenu('browse')} className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <Settings size={18} /> Organizer Page
+                                        <Globe size={18} /> Browse Games Page
                                     </div>
-                                    <ChevronDown size={16} className={`transition-transform duration-200 ${expandedMenus.organizer ? 'rotate-0' : '-rotate-90'}`} />
+                                    <ChevronDown size={16} className={`transition-transform duration-200 ${expandedMenus.browse ? 'rotate-0' : '-rotate-90'}`} />
                                 </button>
-                                <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.organizer ? 'block' : 'hidden'}`}>
+                                <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.browse ? 'block' : 'hidden'}`}>
                                     <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200"></div>
-                                    <li><button onClick={() => setActiveSection('org-overview')} className={getNavLinkClass('org-overview', true)}>Page Overview</button></li>
-                                    <li><button onClick={() => handleAnchorClick('org-overview', 'dashboard-layout')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Dashboard Panel</button></li>
-                                    <li><button onClick={() => handleAnchorClick('org-overview', 'hosted-cards')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Hosted Event Cards</button></li>
-                                    <li><button onClick={() => setActiveSection('org-create')} className={getNavLinkClass('org-create', true)}>Creating Events</button></li>
-                                    <li><button onClick={() => setActiveSection('org-manage')} className={getNavLinkClass('org-manage', true)}>Managing Rosters</button></li>
+                                    <li><button onClick={() => setActiveSection('browse-overview')} className={getNavLinkClass('browse-overview', true)}>Page Overview</button></li>
+                                    <li><button onClick={() => handleAnchorClick('browse-overview', 'browse-controls')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Search & Filters</button></li>
+                                    <li><button onClick={() => handleAnchorClick('browse-overview', 'browse-card')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Rich Card Renders</button></li>
+                                    <li><button onClick={() => handleAnchorClick('browse-overview', 'browse-rsvp-logic')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• RSVP State Machine</button></li>
+                                    <li><button onClick={() => setActiveSection('browse-api')} className={getNavLinkClass('browse-api', true)}>REST Endpoint Core</button></li>
+                                    <li><button onClick={() => setActiveSection('browse-waitlist')} className={getNavLinkClass('browse-waitlist', true)}>Waitlist Lifecycle</button></li>
                                 </ul>
                             </div>
 
@@ -161,9 +168,41 @@ export default function DocumentationPage() {
                                 </ul>
                             </div>
 
-                             <button onClick={() => setActiveSection('browse')} className={getNavLinkClass('browse')}>
-                                <Globe size={18} /> Browse & RSVP API
-                            </button>
+                            {/* Dropdown: Organizer Tools */}
+                            <div>
+                                <button onClick={() => toggleMenu('organizer')} className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <Settings size={18} /> Host Page
+                                    </div>
+                                    <ChevronDown size={16} className={`transition-transform duration-200 ${expandedMenus.organizer ? 'rotate-0' : '-rotate-90'}`} />
+                                </button>
+                                <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.organizer ? 'block' : 'hidden'}`}>
+                                    <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200"></div>
+                                    <li><button onClick={() => setActiveSection('org-overview')} className={getNavLinkClass('org-overview', true)}>Page Overview</button></li>
+                                    <li><button onClick={() => handleAnchorClick('org-overview', 'dashboard-layout')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Dashboard Panel</button></li>
+                                    <li><button onClick={() => handleAnchorClick('org-overview', 'hosted-cards')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Hosted Event Cards</button></li>
+                                    <li><button onClick={() => setActiveSection('org-create')} className={getNavLinkClass('org-create', true)}>Creating Events</button></li>
+                                    <li><button onClick={() => setActiveSection('org-manage')} className={getNavLinkClass('org-manage', true)}>Managing Rosters</button></li>
+                                </ul>
+                            </div>
+
+                            {/* Dropdown: Profile Page */}
+                            <div>
+                                <button onClick={() => toggleMenu('profile')} className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <User size={18} /> Profile Page
+                                    </div>
+                                    <ChevronDown size={16} className={`transition-transform duration-200 ${expandedMenus.profile ? 'rotate-0' : '-rotate-90'}`} />
+                                </button>
+                                <ul className={`mt-1 mb-2 space-y-1 relative ${expandedMenus.profile ? 'block' : 'hidden'}`}>
+                                    <div className="absolute left-5 top-0 bottom-0 w-px bg-slate-200"></div>
+                                    <li><button onClick={() => setActiveSection('profile-overview')} className={getNavLinkClass('profile-overview', true)}>Page Overview</button></li>
+                                    <li><button onClick={() => handleAnchorClick('profile-overview', 'info-card')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Info Card Details</button></li>
+                                    <li><button onClick={() => handleAnchorClick('profile-overview', 'account-settings')} className="w-full text-left pl-14 pr-3 py-1 text-xs text-slate-400 hover:text-slate-700 transition-colors">• Account Settings</button></li>
+                                    <li><button onClick={() => setActiveSection('profile-auth')} className={getNavLinkClass('profile-auth', true)}>Telegram Auth Flow</button></li>
+                                    <li><button onClick={() => setActiveSection('profile-roles')} className={getNavLinkClass('profile-roles', true)}>Role Switching</button></li>
+                                </ul>
+                            </div>
                         </nav>
                     </div>
                 </aside>
@@ -173,16 +212,30 @@ export default function DocumentationPage() {
                     <div className="max-w-4xl mx-auto px-8 py-12 prose">
                         {activeSection === 'overview' && <OverviewSection />}
                         {activeSection === 'architecture' && <ArchitectureSection />}
-                        {activeSection === 'profile-overview' && <ProfileSection subsection="overview" />}
-                        {activeSection === 'profile-auth' && <ProfileSection subsection="auth" />}
-                        {activeSection === 'profile-roles' && <ProfileSection subsection="roles" />}
-                        {activeSection === 'org-overview' && <OrganizerSection subsection="overview" />}
-                        {activeSection === 'org-create' && <OrganizerSection subsection="create" />}
-                        {activeSection === 'org-manage' && <OrganizerSection subsection="manage" />}
+                        
+                        {/* Home Mappings */}
+                        {activeSection === 'home-overview' && <HomeSection subsection="overview" />}
+                        {activeSection === 'home-api' && <HomeSection subsection="api" />}
+
+                        {/* Browse Mappings */}
+                        {activeSection === 'browse-overview' && <BrowseSection subsection="overview" />}
+                        {activeSection === 'browse-api' && <BrowseSection subsection="api" />}
+                        {activeSection === 'browse-waitlist' && <BrowseSection subsection="waitlist" />}
+
+                        {/* My Games Mappings */}
                         {activeSection === 'mygames-overview' && <MyGamesSection subsection="overview" />}
                         {activeSection === 'mygames-stats' && <MyGamesSection subsection="stats" />}
                         {activeSection === 'mygames-schedule' && <MyGamesSection subsection="schedule" />}
-                        {activeSection === 'browse' && <BrowseSection />}
+                        
+                        {/* Organizer Dashboard Mappings */}
+                        {activeSection === 'org-overview' && <OrganizerSection subsection="overview" />}
+                        {activeSection === 'org-create' && <OrganizerSection subsection="create" />}
+                        {activeSection === 'org-manage' && <OrganizerSection subsection="manage" />}
+                        
+                        {/* Profile Mappings */}
+                        {activeSection === 'profile-overview' && <ProfileSection subsection="overview" />}
+                        {activeSection === 'profile-auth' && <ProfileSection subsection="auth" />}
+                        {activeSection === 'profile-roles' && <ProfileSection subsection="roles" />}
                     </div>
                 </main>
             </div>
