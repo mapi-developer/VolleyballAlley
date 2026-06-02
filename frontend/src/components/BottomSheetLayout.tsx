@@ -23,19 +23,19 @@ export default function BottomSheetLayout({ isOpen, onClose, title, children }: 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-end bg-black/50 dark:bg-black/70 backdrop-blur-sm transition-opacity">
+    <div className="fixed inset-0 z-50 flex justify-center items-end bg-black/50 backdrop-blur-sm transition-opacity">
       <div className="absolute inset-0" onClick={onClose} />
       
-      <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-t-3xl flex flex-col max-h-[90vh] shadow-2xl animate-slide-up transition-colors duration-200">
+      <div className="relative w-full max-w-md bg-app-bg rounded-t-3xl flex flex-col max-h-[90vh] shadow-2xl animate-slide-up transition-colors duration-200">
         <div className="w-full flex justify-center pt-3 pb-1" onClick={onClose}>
-          <div className="w-12 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full cursor-pointer" />
+          <div className="w-12 h-1.5 bg-app-active rounded-full cursor-pointer transition-colors" />
         </div>
 
-        <div className="flex justify-between items-center px-6 py-3 border-b border-gray-100 dark:border-zinc-800">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+        <div className="flex justify-between items-center px-6 py-3 border-b border-app-active transition-colors">
+          <h2 className="text-xl font-bold text-app-text-primary transition-colors">{title}</h2>
           <button 
             onClick={onClose}
-            className="p-2 bg-gray-100 dark:bg-zinc-800 rounded-full text-gray-500 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+            className="p-2 bg-app-inset rounded-full text-app-text-secondary hover:bg-app-active transition-colors"
           >
             <X size={20} />
           </button>
