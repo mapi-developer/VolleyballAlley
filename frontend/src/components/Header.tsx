@@ -156,7 +156,7 @@ const Header = () => {
             onClick={handleSendSupport}
             className={`w-full py-4 rounded-2xl font-black text-base shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 ${
               isSuccess 
-                ? 'bg-emerald-500 text-white' 
+                ? 'bg-app-success text-white' 
                 : 'bg-app-accent text-white disabled:opacity-50 disabled:shadow-none'
             }`}
           >
