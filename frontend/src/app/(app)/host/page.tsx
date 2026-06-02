@@ -63,14 +63,14 @@ export default function HostPage() {
   return (
     <div className="py-6 space-y-8 animate-in fade-in duration-500 pb-24">
       <div className="flex items-center justify-between px-1">
-        <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight transition-colors">Organizer Dashboard</h1>
-        <button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 text-white px-4 py-2.5 rounded-2xl font-bold text-[13px] shadow-lg active:scale-95 transition-all"><Plus size={18} strokeWidth={3} /> New Event</button>
+        <h1 className="text-2xl font-black text-app-text-primary tracking-tight transition-colors">Organizer Dashboard</h1>
+        <button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2 bg-app-accent text-white px-4 py-2.5 rounded-2xl font-bold text-[13px] shadow-lg active:scale-95 transition-all"><Plus size={18} strokeWidth={3} /> New Event</button>
       </div>
 
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-400"><Loader2 className="animate-spin mb-4 text-blue-500" size={32} /><p>Loading dashboard...</p></div>
+        <div className="flex flex-col items-center justify-center py-12 text-app-text-secondary"><Loader2 className="animate-spin mb-4 text-app-accent" size={32} /><p>Loading dashboard...</p></div>
       ) : hostedEvents.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-900 rounded-[32px] border border-gray-100 dark:border-zinc-800 shadow-sm transition-colors">
+        <div className="text-center py-12 text-app-text-secondary bg-app-bg rounded-[32px] border border-app-active shadow-sm transition-colors">
           <Calendar className="mx-auto mb-3 opacity-50" size={40} /><p>You haven't hosted any events yet.</p>
         </div>
       ) : (
