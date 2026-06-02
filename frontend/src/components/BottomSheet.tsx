@@ -60,20 +60,22 @@ const BottomSheet = ({ isOpen, onClose, title, children }: BottomSheetProps) => 
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end justify-center overflow-hidden">
-      <div className={`absolute inset-0 bg-black/40 dark:bg-black/70 backdrop-blur-[2px] transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`} onClick={onClose} />
+      {/* Unified backdrop overlay */}
+      <div className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`} onClick={onClose} />
       
       <div 
-        className={`relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-t-[32px] shadow-2xl flex flex-col max-h-[90vh] transition-transform ${isDragging ? 'duration-0' : 'duration-300'} ease-out transform transition-colors duration-200`}
+        className={`relative w-full max-w-md bg-app-bg rounded-t-[32px] shadow-2xl flex flex-col max-h-[90vh] transition-transform ${isDragging ? 'duration-0' : 'duration-300'} ease-out transform transition-colors duration-200`}
         style={{ transform: `translateY(${isAnimating ? `${dragY}px` : '100%'})` }}
       >
         <div className="w-full cursor-grab active:cursor-grabbing touch-none" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
           <div className="flex justify-center py-3">
-            <div className="w-12 h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-full" />
+            {/* Drag Handle Pill */}
+            <div className="w-12 h-1.5 bg-app-active rounded-full transition-colors" />
           </div>
 
-          <div className="px-6 pb-4 flex items-center justify-between border-b border-gray-50 dark:border-zinc-800">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white select-none">{title}</h3>
-            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-full text-gray-400 dark:text-zinc-500 active:scale-90 transition-all">
+          <div className="px-6 pb-4 flex items-center justify-between border-b border-app-active transition-colors">
+            <h3 className="text-xl font-bold text-app-text-primary select-none transition-colors">{title}</h3>
+            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="p-2 bg-app-inset rounded-full text-app-text-secondary active:scale-90 transition-all">
               <X size={20} />
             </button>
           </div>
