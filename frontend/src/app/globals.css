@@ -1,14 +1,31 @@
 @import "tailwindcss";
 
 @theme inline {
+  /* Base App Colors */
   --color-app-bg: var(--app-bg);
   --color-app-inset: var(--app-inset);
   --color-app-active: var(--app-active);
+  
+  /* Primary Accents */
   --color-app-accent: var(--app-accent);
+  --color-app-accent-bg: var(--app-accent-bg);
   --color-app-link: var(--app-link);
   
+  /* Text */
   --color-app-text-primary: var(--app-text-primary);
   --color-app-text-secondary: var(--app-text-secondary);
+
+  --color-app-inverted: var(--app-inverted);
+  --color-app-inverted-text: var(--app-inverted-text);
+
+  /* Semantic Status Colors (Warning/Success) */
+  --color-app-warning: var(--app-warning);
+  --color-app-warning-bg: var(--app-warning-bg);
+  --color-app-success: var(--app-success);
+  --color-app-success-bg: var(--app-success-bg);
+
+  --color-app-error: var(--app-error);
+  --color-app-error-bg: var(--app-error-bg);
 }
 
 :root {
@@ -16,10 +33,25 @@
   --app-bg: #ffffff;
   --app-inset: #f3f4f6; /* gray-100 */
   --app-active: #e5e7eb; /* gray-200 */
+  
   --app-accent: #3b82f6; /* blue-500 */
+  --app-accent-bg: #eff6ff; /* blue-50 */
   --app-link: #2563eb; /* blue-600 */
+  
   --app-text-primary: #111827; /* gray-900 */
   --app-text-secondary: #6b7280; /* gray-500 */
+
+  --app-inverted: #111827; /* gray-900 */
+  --app-inverted-text: #ffffff;
+
+  /* Semantic Light */
+  --app-warning: #f59e0b; /* amber-500 */
+  --app-warning-bg: #fffbeb; /* amber-50 */
+  --app-success: #10b981; /* emerald-500 */
+  --app-success-bg: #ecfdf5; /* emerald-50 */
+
+  --app-error: #ef4444; /* red-500 */
+  --app-error-bg: #fef2f2; /* red-50 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,10 +60,25 @@
     --app-bg: #17212B;
     --app-inset: #101721;
     --app-active: #243343;
+    
     --app-accent: #4AA2E3;
+    --app-accent-bg: rgba(74, 162, 227, 0.15); /* Tinted dark accent */
     --app-link: #3396DE;
+    
     --app-text-primary: #FFFFFF;
     --app-text-secondary: #7D8B99;
+
+    --app-inverted: #FFFFFF;
+    --app-inverted-text: #17212B;
+
+    /* Semantic Dark */
+    --app-warning: #fbbf24; /* amber-400 */
+    --app-warning-bg: rgba(245, 158, 11, 0.15); /* Amber tint */
+    --app-success: #34d399; /* emerald-400 */
+    --app-success-bg: rgba(16, 185, 129, 0.15); /* Emerald tint */
+
+    --app-error: #f87171; /* red-400 */
+    --app-error-bg: rgba(239, 68, 68, 0.15); /* Red tint */
   }
 }
 
