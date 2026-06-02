@@ -14,6 +14,7 @@ export default function MyGamesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [activeSection, setActiveSection] = useState<'upcoming' | 'history' | 'stats'>('upcoming');
 
   const fetchMyGames = async () => {
     if (!user?.id) return;
@@ -95,38 +96,88 @@ export default function MyGamesPage() {
     <div className="py-4 space-y-6 animate-in fade-in duration-500 pb-24">
       {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-3">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-app-bg rounded-[24px] p-4 shadow-sm border border-app-active flex flex-col items-center text-center justify-center transition-colors">
-            <p className="text-xl font-black text-app-accent leading-none">{stat.value}</p>
-            <p className="text-[9px] font-black text-app-text-secondary uppercase tracking-tight mt-2 leading-tight">{stat.label}</p>
-          </div>
-        ))}
+        {stats.map((stat, index) => {
+          const sectionKey = ['upcoming', 'history', 'stats'][index] as 'upcoming' | 'history' | 'stats';
+          const isActive = activeSection === sectionKey;
+          return (
+            <button
+              key={index}
+              onClick={() => setActiveSection(sectionKey)}
+              className={`bg-app-bg rounded-[24px] p-4 shadow-sm flex flex-col items-center text-center justify-center transition-colors ${
+                isActive
+                  ? 'border-2 border-app-accent'
+                  : 'border border-app-active'
+              }`}
+            >
+              <p className="text-xl font-black text-app-accent leading-none">{stat.value}</p>
+              <p className="text-[9px] font-black text-app-text-secondary uppercase tracking-tight mt-2 leading-tight">{stat.label}</p>
+            </button>
+          );
+        })}
       </div>
 
       <div className="space-y-4 pt-2">
-        <h2 className="text-sm font-black text-app-text-secondary uppercase tracking-widest px-1">Upcoming Schedule</h2>
-        
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12 text-app-text-secondary">
             <Loader2 className="animate-spin mb-4 text-app-accent" size={32} />
             <p>Loading your games...</p>
           </div>
-        ) : upcomingGames.length === 0 ? (
-          <div className="bg-app-bg rounded-[32px] p-10 shadow-sm border border-dashed border-app-active text-center transition-colors">
-            <Calendar className="mx-auto mb-3 text-app-text-secondary" size={32} />
-            <p className="text-sm font-bold text-app-text-primary">Your schedule is empty</p>
-            <p className="text-xs text-app-text-secondary mt-1">Head to the Browse tab to find matches.</p>
-          </div>
+        ) : activeSection === 'upcoming' ? (
+          <>
+            <h2 className="text-sm font-black text-app-text-secondary uppercase tracking-widest px-1">Upcoming Schedule</h2>
+            {upcomingGames.length === 0 ? (
+              <div className="bg-app-bg rounded-[32px] p-10 shadow-sm border border-dashed border-app-active text-center transition-colors">
+                <Calendar className="mx-auto mb-3 text-app-text-secondary" size={32} />
+                <p className="text-sm font-bold text-app-text-primary">Your schedule is empty</p>
+                <p className="text-xs text-app-text-secondary mt-1">Head to the Browse tab to find matches.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {upcomingGames.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    onClick={() => setSelectedGame(game)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        ) : activeSection === 'history' ? (
+          <>
+            <h2 className="text-sm font-black text-app-text-secondary uppercase tracking-widest px-1">Games History</h2>
+            {pastGames.length === 0 ? (
+              <div className="bg-app-bg rounded-[32px] p-10 shadow-sm border border-dashed border-app-active text-center transition-colors">
+                <Calendar className="mx-auto mb-3 text-app-text-secondary" size={32} />
+                <p className="text-sm font-bold text-app-text-primary">No games played yet</p>
+                <p className="text-xs text-app-text-secondary mt-1">Your match history will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pastGames.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    onClick={() => setSelectedGame(game)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
-          <div className="space-y-4">
-            {upcomingGames.map((game) => (
-              <GameCard 
-                key={game.id} 
-                game={game} 
-                onClick={() => setSelectedGame(game)} 
-              />
-            ))}
-          </div>
+          <>
+            <h2 className="text-sm font-black text-app-text-secondary uppercase tracking-widest px-1">Player Statistics</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-app-bg rounded-[24px] p-6 shadow-sm border border-app-active flex flex-col items-center text-center">
+                <p className="text-3xl font-black text-app-accent leading-none">{pastGames.length + upcomingGames.length}</p>
+                <p className="text-[9px] font-black text-app-text-secondary uppercase tracking-tight mt-2 leading-tight">Total Games</p>
+              </div>
+              <div className="bg-app-bg rounded-[24px] p-6 shadow-sm border border-app-active flex flex-col items-center text-center">
+                <p className="text-3xl font-black text-app-accent leading-none">{totalHours.toFixed(1)}</p>
+                <p className="text-[9px] font-black text-app-text-secondary uppercase tracking-tight mt-2 leading-tight">Hours Played</p>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
