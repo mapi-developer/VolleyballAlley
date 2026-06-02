@@ -81,8 +81,8 @@ export default function EventCard({ game, variant = 'detailed', onClick }: GameC
                     {game.isJoined && (
                         <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-black tracking-wider transition-colors ${
                             game.rsvpStatus === 'waitlisted' 
-                            ? 'bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' 
-                            : 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                            ? 'bg-app-warning-bg text-app-warning' 
+                            : 'bg-app-success-bg text-app-success'
                         }`}>
                             {game.rsvpStatus === 'waitlisted' ? 'In Waitlist' : 'Joined'}
                         </span>
@@ -123,12 +123,12 @@ export default function EventCard({ game, variant = 'detailed', onClick }: GameC
                         <span className="ml-1 text-app-text-secondary font-medium text-[11px]">Players</span>
                     </div>
                     {isFull && !game.isJoined && (
-                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-widest">Waitlist Open</span>
+                        <span className="text-[10px] text-app-warning font-black uppercase tracking-widest transition-colors">Waitlist Open</span>
                     )}
                 </div>
                 <div className="w-full bg-app-inset rounded-full h-1.5 overflow-hidden transition-colors">
                     <div
-                        className={`h-1.5 rounded-full transition-all duration-500 ${isFull ? 'bg-amber-500' : 'bg-app-accent'}`}
+                        className={`h-1.5 rounded-full transition-all duration-500 ${isFull ? 'bg-app-warning' : 'bg-app-accent'}`}
                         style={{ width: `${fillPercentage}%` }}
                     ></div>
                 </div>
@@ -137,8 +137,8 @@ export default function EventCard({ game, variant = 'detailed', onClick }: GameC
             {/* FOOTER */}
             {variant === 'detailed' && (
                 <div className="mt-4 pt-3 border-t border-dashed border-app-active flex justify-between items-center transition-colors">
-                    <span className="text-sm font-black text-app-text-primary">{game.price}</span>
-                    <span className="text-xs font-bold text-app-link">View Details →</span>
+                    <span className="text-sm font-black text-app-text-primary transition-colors">{game.price}</span>
+                    <span className="text-xs font-bold text-app-link transition-colors">View Details →</span>
                 </div>
             )}
         </div>
