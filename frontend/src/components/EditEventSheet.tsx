@@ -16,7 +16,7 @@ interface EditEventSheetProps {
 }
 
 const FieldLabel = ({ icon: Icon, text }: { icon: any, text: string }) => (
-  <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-1.5 px-1 transition-colors">
+  <div className="flex items-center gap-1.5 text-[11px] font-black text-app-text-secondary uppercase tracking-widest mb-1.5 px-1 transition-colors">
     <Icon size={14} /> {text}
   </div>
 );
@@ -181,7 +181,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
     }
   };
 
-  const inputClass = "w-full bg-zinc-50 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors";
+  const inputClass = "w-full bg-app-inset text-app-text-primary rounded-2xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-app-accent/20 transition-colors";
 
   return (
     <BottomSheet isOpen={isOpen} onClose={() => { onClose(); setShowDeleteConfirm(false); }} title="Manage Event">
@@ -215,7 +215,7 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
         <div className="grid grid-cols-2 gap-3">
           <div>
             <FieldLabel icon={Calendar} text="Date" />
-            <input type="date" min={todayStr} disabled={isLocked()} className={`${inputClass} disabled:text-gray-400 dark:disabled:text-zinc-600`} value={localEvent.date} onChange={e => { const selectedDate = e.target.value; if (selectedDate >= todayStr) setLocalEvent({ ...localEvent, date: selectedDate }); }} />
+            <input type="date" min={todayStr} disabled={isLocked()} className={`${inputClass} disabled:opacity-50`} value={localEvent.date} onChange={e => { const selectedDate = e.target.value; if (selectedDate >= todayStr) setLocalEvent({ ...localEvent, date: selectedDate }); }} />
           </div>
           <div>
             <FieldLabel icon={Users} text="Max Players" />
@@ -227,14 +227,14 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
           <FieldLabel icon={Clock} text="Time Slot" />
           <div className="flex items-center gap-3">
              <input type="time" className={inputClass} value={localEvent.startTime} onChange={e => setLocalEvent({ ...localEvent, startTime: e.target.value })} />
-             <span className="text-sm font-bold text-gray-400 dark:text-zinc-600">to</span>
+             <span className="text-sm font-bold text-app-text-secondary">to</span>
              <input type="time" className={inputClass} value={localEvent.endTime} onChange={e => setLocalEvent({ ...localEvent, endTime: e.target.value })} />
           </div>
         </div>
 
         <div>
           <FieldLabel icon={MapPin} text="Location & Map Link" />
-          <input type="text" disabled={isLocked()} className={`${inputClass} disabled:text-gray-400 dark:disabled:text-zinc-600`} value={localEvent.location} onChange={e => setLocalEvent({ ...localEvent, location: e.target.value })} />
+          <input type="text" disabled={isLocked()} className={`${inputClass} disabled:opacity-50`} value={localEvent.location} onChange={e => setLocalEvent({ ...localEvent, location: e.target.value })} />
         </div>
 
         {/* FEE & REVOLUT ROW */}
@@ -248,25 +248,25 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
              <input type="text" placeholder="@tag" className={inputClass} value={localEvent.revolutTag} onChange={e => setLocalEvent({ ...localEvent, revolutTag: e.target.value })} />
           </div>
         </div>
-        <hr className="border-gray-100 dark:border-zinc-800" />
+        <hr className="border-app-active" />
         
         {/* ATTENDEES & WAITLIST UI */}
         <div className="space-y-4">
           <div>
-            <h4 className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1 mb-2">Attendees ({localEvent.attendees?.length || 0} / {localEvent.slots})</h4>
-            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-3xl divide-y divide-white/50 dark:divide-white/10 overflow-hidden transition-colors">
+            <h4 className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest px-1 mb-2">Attendees ({localEvent.attendees?.length || 0} / {localEvent.slots})</h4>
+            <div className="bg-app-inset rounded-3xl divide-y divide-app-active overflow-hidden transition-colors">
               {localEvent.attendees?.map((a: any) => {
                 const isHost = a.user_id === user?.id || a.user_id === localEvent.host_id;
                 return (
                   <div key={a.user_id} className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-gray-700 dark:text-zinc-200">{a.user?.first_name || a.name} {isHost ? "(Host)" : ""}</span>
-                      {isHost && <Shield size={12} className="text-blue-500 dark:text-blue-400" />}
+                      <span className="text-sm font-bold text-app-text-primary">{a.user?.first_name || a.name} {isHost ? "(Host)" : ""}</span>
+                      {isHost && <Shield size={12} className="text-app-accent" />}
                     </div>
                     {!isHost && (
                       <div className="flex gap-2">
-                        <button onClick={() => handleDemote(a.user_id)} className="p-2 text-amber-500 bg-white dark:bg-zinc-700 rounded-xl shadow-sm transition-colors"><ArrowDownCircle size={16} /></button>
-                        <button onClick={() => handleRemove(a.user_id, 'main')} className="p-2 text-rose-500 bg-white dark:bg-zinc-700 rounded-xl shadow-sm transition-colors"><UserMinus size={16} /></button>
+                        <button onClick={() => handleDemote(a.user_id)} className="p-2 text-app-warning bg-app-bg rounded-xl shadow-sm hover:bg-app-active transition-colors"><ArrowDownCircle size={16} /></button>
+                        <button onClick={() => handleRemove(a.user_id, 'main')} className="p-2 text-app-error bg-app-bg rounded-xl shadow-sm hover:bg-app-error-bg transition-colors"><UserMinus size={16} /></button>
                       </div>
                     )}
                   </div>
@@ -276,14 +276,14 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
           </div>
           {localEvent.waitlist && localEvent.waitlist.length > 0 && (
             <div>
-              <h4 className="text-[11px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-widest px-1 mb-2 flex justify-between">Waitlist <span>{localEvent.waitlist.length} waiting</span></h4>
-              <div className="bg-amber-50 dark:bg-amber-900/10 rounded-3xl divide-y divide-white/50 dark:divide-white/10 overflow-hidden transition-colors">
+              <h4 className="text-[11px] font-black text-app-warning uppercase tracking-widest px-1 mb-2 flex justify-between">Waitlist <span>{localEvent.waitlist.length} waiting</span></h4>
+              <div className="bg-app-warning-bg rounded-3xl divide-y divide-app-active overflow-hidden transition-colors">
                 {localEvent.waitlist.map((a: any) => (
                   <div key={a.user_id} className="flex items-center justify-between p-4">
-                    <span className="text-sm font-bold text-amber-900 dark:text-amber-400">{a.user?.first_name || a.name}</span>
+                    <span className="text-sm font-bold text-app-warning">{a.user?.first_name || a.name}</span>
                     <div className="flex gap-2">
-                      <button onClick={() => handlePromote(a.user_id)} className="p-2 text-emerald-600 dark:text-emerald-400 bg-white dark:bg-zinc-700 rounded-xl shadow-sm transition-colors"><ArrowUpCircle size={16} /></button>
-                      <button onClick={() => handleRemove(a.user_id, 'waitlist')} className="p-2 text-rose-500 bg-white dark:bg-zinc-700 rounded-xl shadow-sm transition-colors"><UserMinus size={16} /></button>
+                      <button onClick={() => handlePromote(a.user_id)} className="p-2 text-app-success bg-app-bg rounded-xl shadow-sm hover:bg-app-success-bg transition-colors"><ArrowUpCircle size={16} /></button>
+                      <button onClick={() => handleRemove(a.user_id, 'waitlist')} className="p-2 text-app-error bg-app-bg rounded-xl shadow-sm hover:bg-app-error-bg transition-colors"><UserMinus size={16} /></button>
                     </div>
                   </div>
                 ))}
@@ -292,33 +292,33 @@ export default function EditEventSheet({ isOpen, onClose, event, onUpdate, onDel
           )}
           <form onSubmit={handleManualAddUser} className="flex gap-2 pt-2">
             <div className="relative flex-1">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-600" />
-              <input type="text" placeholder="Add player manually..." className="w-full bg-zinc-50 dark:bg-zinc-800 border-none rounded-2xl py-3 pl-9 pr-3 text-sm text-gray-900 dark:text-white font-medium outline-none transition-colors" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-app-text-secondary" />
+              <input type="text" placeholder="Add player manually..." className="w-full bg-app-inset border-none rounded-2xl py-3 pl-9 pr-3 text-sm text-app-text-primary font-medium outline-none transition-colors" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
-            <button type="submit" className="bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white px-5 rounded-2xl text-xs font-bold active:scale-95 transition-all">Add</button>
+            <button type="submit" className="bg-app-inverted text-app-inverted-text px-5 rounded-2xl text-xs font-bold active:scale-95 transition-all">Add</button>
           </form>
         </div>
 
         {/* SAVE & DELETE ACTIONS */}
-        <div className="pt-6 border-t border-gray-100 dark:border-zinc-800 space-y-3">
+        <div className="pt-6 border-t border-app-active space-y-3">
           {!showDeleteConfirm && (
-            <button onClick={handleSave} disabled={isSaving} className="w-full bg-blue-600 dark:bg-blue-500 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-200 dark:shadow-none active:scale-95 transition-all flex justify-center items-center gap-2">
+            <button onClick={handleSave} disabled={isSaving} className="w-full bg-app-accent text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2">
               {isSaving ? <Loader2 className="animate-spin" size={20} /> : "Save Changes"}
             </button>
           )}
           {!showDeleteConfirm ? (
-            <button onClick={() => setShowDeleteConfirm(true)} className="w-full flex items-center justify-center gap-2 text-rose-500 font-bold text-sm py-4 bg-rose-50 dark:bg-rose-900/10 rounded-2xl active:scale-95 transition-all">
+            <button onClick={() => setShowDeleteConfirm(true)} className="w-full flex items-center justify-center gap-2 text-app-error font-bold text-sm py-4 bg-app-error-bg rounded-2xl active:scale-95 transition-all">
               <Trash2 size={18} /> Cancel & Delete Event
             </button>
           ) : (
-            <div className="bg-rose-500 rounded-3xl p-6 text-white space-y-4 animate-in zoom-in-95 duration-200 shadow-xl shadow-rose-200 dark:shadow-none">
+            <div className="bg-app-error rounded-3xl p-6 text-white space-y-4 animate-in zoom-in-95 duration-200 shadow-xl shadow-app-error/20">
               <div className="flex items-center gap-3 font-black uppercase text-[11px] tracking-widest"><AlertTriangle size={18} /> Confirm Deletion</div>
               <p className="text-sm font-medium">This action cannot be undone.</p>
               <div className="flex gap-3 pt-2">
-                <button onClick={handleDelete} disabled={isDeleting} className="flex-1 bg-white text-rose-600 py-3.5 rounded-xl font-black text-xs active:scale-95 flex justify-center transition-colors">
+                <button onClick={handleDelete} disabled={isDeleting} className="flex-1 bg-white text-app-error py-3.5 rounded-xl font-black text-xs active:scale-95 flex justify-center transition-colors">
                   {isDeleting ? <Loader2 className="animate-spin" size={16} /> : "YES, DELETE"}
                 </button>
-                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 bg-rose-700 text-white py-3.5 rounded-xl font-black text-xs active:scale-95 transition-colors">NO, KEEP IT</button>
+                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 bg-black/20 text-white py-3.5 rounded-xl font-black text-xs active:scale-95 transition-colors">NO, KEEP IT</button>
               </div>
             </div>
           )}
