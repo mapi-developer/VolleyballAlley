@@ -70,7 +70,7 @@ export default function EventCard({ game, variant = 'detailed', onClick }: GameC
     return (
         <div
             onClick={onClick}
-            className="bg-app-bg rounded-[24px] p-4 shadow-sm border border-app-active mb-3 active:scale-[0.98] transition-all cursor-pointer overflow-hidden duration-200"
+            className="bg-app-card rounded-[24px] p-4 shadow-sm border border-app-active mb-3 active:scale-[0.98] transition-all cursor-pointer overflow-hidden duration-200"
         >
             {/* LABELS */}
             <div className="flex justify-between items-start mb-3">

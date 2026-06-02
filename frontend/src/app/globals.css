@@ -3,6 +3,7 @@
 @theme inline {
   /* Base App Colors */
   --color-app-bg: var(--app-bg);
+  --color-app-card: var(--app-card);
   --color-app-inset: var(--app-inset);
   --color-app-active: var(--app-active);
   
@@ -26,11 +27,13 @@
 
   --color-app-error: var(--app-error);
   --color-app-error-bg: var(--app-error-bg);
+
 }
 
 :root {
   /* Light Theme Fallbacks */
   --app-bg: #ffffff;
+  --app-card: #ffffff; /* White cards on light bg */
   --app-inset: #f3f4f6; /* gray-100 */
   --app-active: #e5e7eb; /* gray-200 */
   
@@ -52,13 +55,16 @@
 
   --app-error: #ef4444; /* red-500 */
   --app-error-bg: #fef2f2; /* red-50 */
+
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     /* Your New Dark Theme Palette */
-    --app-bg: #17212B;
-    --app-inset: #101721;
+    --app-bg: #17212B; 
+    --app-card: #1C2B38; /* Slightly lighter than #17212B for better contrast */
+    /* Increased brightness for better contrast on inputs */
+    --app-inset: #182533; 
     --app-active: #243343;
     
     --app-accent: #4AA2E3;
