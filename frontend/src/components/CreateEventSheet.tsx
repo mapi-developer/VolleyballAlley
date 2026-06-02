@@ -62,7 +62,8 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
     }
   };
 
-  const inputClass = "w-full bg-zinc-50 dark:bg-zinc-800 text-gray-900 dark:text-white border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-colors";
+  // Replaced hardcoded zinc/gray colors with unified CSS variables
+  const inputClass = "w-full bg-app-inset text-app-text-primary border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-app-accent outline-none transition-colors";
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Create New Event">
@@ -100,7 +101,7 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
         <FormField label="Time Slot" icon={Clock}>
           <div className="flex items-center gap-3">
             <input type="time" className={inputClass} value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} />
-            <span className="font-black text-gray-300 dark:text-zinc-700">to</span>
+            <span className="font-black text-app-text-secondary transition-colors">to</span>
             <input type="time" className={inputClass} value={formData.endTime} onChange={e => setFormData({ ...formData, endTime: e.target.value })} />
           </div>
         </FormField>
@@ -118,8 +119,8 @@ export default function CreateEventSheet({ isOpen, onClose, onCreate }: { isOpen
           </FormField>
         </div>
 
-        <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
-          <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 dark:bg-blue-500 text-white py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+        <div className="pt-4 border-t border-app-active transition-colors">
+          <button type="submit" disabled={isSubmitting} className="w-full bg-app-accent text-white py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
             {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : "Confirm & Launch Event"}
           </button>
         </div>
