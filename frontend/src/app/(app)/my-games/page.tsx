@@ -23,32 +23,32 @@ export default function MyGamesPage() {
       const data = await api.getMyGames();
 
       const mappedGames = data.map((item: any) => {
-        const dbEvent = item.event || item; 
+        const dbEvent = item.event || item;
         const dateObj = new Date(dbEvent.start_time);
         const endDate = new Date(dbEvent.end_time || dbEvent.start_time);
         const userRegistration = (dbEvent.attendees || []).find((a: any) => a.user_id === user.id);
         const confirmed = (dbEvent.attendees || []).filter((a: any) => a.status === 'confirmed');
         const durationHours = (endDate.getTime() - dateObj.getTime()) / (1000 * 60 * 60) || 2;
-        
+
         const locName = dbEvent.location_name || "Location TBD";
         const isSand = locName.toLowerCase().includes('sand') || locName.toLowerCase().includes('beach');
 
         return {
           id: String(dbEvent.id),
-          title: dbEvent.title || "Untitled Match", 
+          title: dbEvent.title || "Untitled Match",
           description: dbEvent.description,
           type: dbEvent.type || (isSand ? 'Outdoor' : 'Indoor'),
-          level: dbEvent.level_required || 'All', 
+          level: dbEvent.level_required || 'All',
           rawDate: dbEvent.start_time,
           date: dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
           time: `${dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`,
-          location: locName, 
+          location: locName,
           price: dbEvent.price === 0 ? "Free" : `${dbEvent.price} HUF`,
-          revolutTag: dbEvent.revolut_tag, 
-          maxPlayers: dbEvent.max_players, 
+          revolutTag: dbEvent.revolut_tag,
+          maxPlayers: dbEvent.max_players,
           currentPlayers: confirmed.length,
           hostName: dbEvent.host_id === user.id ? "You" : "Organizer",
-          isJoined: !!userRegistration, 
+          isJoined: !!userRegistration,
           isHost: dbEvent.host_id === user.id,
           rsvpStatus: userRegistration ? userRegistration.status : null,
           durationHours
@@ -57,18 +57,18 @@ export default function MyGamesPage() {
 
       const now = Date.now();
       const upcoming = mappedGames.filter((g: any) => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) > now).sort((a: any, b: any) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
-      const past = mappedGames.filter((g: any) => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) <= now);
+      const past = mappedGames.filter((g: any) => new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) <= now).sort((a: any, b: any) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
 
-      setUpcomingGames(upcoming); 
+      setUpcomingGames(upcoming);
       setPastGames(past);
-      if (selectedGame) { 
-        const refreshed = mappedGames.find((g: any) => g.id === selectedGame.id); 
-        if (refreshed) setSelectedGame(refreshed); 
+      if (selectedGame) {
+        const refreshed = mappedGames.find((g: any) => g.id === selectedGame.id);
+        if (refreshed) setSelectedGame(refreshed);
       }
-    } catch (error) { 
-      console.error(error); 
-    } finally { 
-      setIsLoading(false); 
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -82,13 +82,13 @@ export default function MyGamesPage() {
   ];
 
   const handleCancelRSVP = async (gameId: string) => {
-    try { 
-      setIsCancelling(true); 
-      await api.leaveEvent(gameId); 
-      fetchMyGames(); 
+    try {
+      setIsCancelling(true);
+      await api.leaveEvent(gameId);
+      fetchMyGames();
       setSelectedGame(null);
-    } 
-    catch (error) { console.error(error); } 
+    }
+    catch (error) { console.error(error); }
     finally { setIsCancelling(false); }
   };
 
@@ -103,11 +103,10 @@ export default function MyGamesPage() {
             <button
               key={index}
               onClick={() => setActiveSection(sectionKey)}
-              className={`bg-app-bg rounded-[24px] p-4 shadow-sm flex flex-col items-center text-center justify-center transition-colors ${
-                isActive
+              className={`bg-app-bg rounded-[24px] p-4 shadow-sm flex flex-col items-center text-center justify-center transition-colors ${isActive
                   ? 'border-2 border-app-accent'
                   : 'border border-app-active'
-              }`}
+                }`}
             >
               <p className="text-xl font-black text-app-accent leading-none">{stat.value}</p>
               <p className="text-[9px] font-black text-app-text-secondary uppercase tracking-tight mt-2 leading-tight">{stat.label}</p>
@@ -181,12 +180,12 @@ export default function MyGamesPage() {
         )}
       </div>
 
-      <EventDetailsSheet 
-        isOpen={!!selectedGame} 
-        onClose={() => setSelectedGame(null)} 
-        game={selectedGame} 
-        onCancelRsvp={(id) => handleCancelRSVP(id)} 
-        isCancelling={isCancelling} 
+      <EventDetailsSheet
+        isOpen={!!selectedGame}
+        onClose={() => setSelectedGame(null)}
+        game={selectedGame}
+        onCancelRsvp={(id) => handleCancelRSVP(id)}
+        isCancelling={isCancelling}
       />
     </div>
   );
