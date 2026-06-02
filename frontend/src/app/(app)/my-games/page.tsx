@@ -96,26 +96,26 @@ export default function MyGamesPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-3">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white dark:bg-zinc-900 rounded-[24px] p-4 shadow-sm border border-gray-100 dark:border-zinc-800 flex flex-col items-center text-center justify-center transition-colors">
-            <p className="text-xl font-black text-blue-600 dark:text-blue-400 leading-none">{stat.value}</p>
-            <p className="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tight mt-2 leading-tight">{stat.label}</p>
+          <div key={index} className="bg-app-bg rounded-[24px] p-4 shadow-sm border border-app-active flex flex-col items-center text-center justify-center transition-colors">
+            <p className="text-xl font-black text-app-accent leading-none">{stat.value}</p>
+            <p className="text-[9px] font-black text-app-text-secondary uppercase tracking-tight mt-2 leading-tight">{stat.label}</p>
           </div>
         ))}
       </div>
 
       <div className="space-y-4 pt-2">
-        <h2 className="text-sm font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest px-1">Upcoming Schedule</h2>
+        <h2 className="text-sm font-black text-app-text-secondary uppercase tracking-widest px-1">Upcoming Schedule</h2>
         
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-zinc-500">
-            <Loader2 className="animate-spin mb-4 text-blue-500" size={32} />
+          <div className="flex flex-col items-center justify-center py-12 text-app-text-secondary">
+            <Loader2 className="animate-spin mb-4 text-app-accent" size={32} />
             <p>Loading your games...</p>
           </div>
         ) : upcomingGames.length === 0 ? (
-          <div className="bg-white dark:bg-zinc-900 rounded-[32px] p-10 shadow-sm border border-dashed border-gray-200 dark:border-zinc-800 text-center transition-colors">
-            <Calendar className="mx-auto mb-3 text-gray-300 dark:text-zinc-700" size={32} />
-            <p className="text-sm font-bold text-gray-800 dark:text-zinc-200">Your schedule is empty</p>
-            <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Head to the Browse tab to find matches.</p>
+          <div className="bg-app-bg rounded-[32px] p-10 shadow-sm border border-dashed border-app-active text-center transition-colors">
+            <Calendar className="mx-auto mb-3 text-app-text-secondary" size={32} />
+            <p className="text-sm font-bold text-app-text-primary">Your schedule is empty</p>
+            <p className="text-xs text-app-text-secondary mt-1">Head to the Browse tab to find matches.</p>
           </div>
         ) : (
           <div className="space-y-4">
