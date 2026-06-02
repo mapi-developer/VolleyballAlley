@@ -124,27 +124,27 @@ export default function HomePage() {
     catch (error) { console.error(error); } finally { setIsCancelling(false); }
   };
 
-  if (isLoading) return <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-zinc-500"><Loader2 className="animate-spin mb-4 text-blue-500" size={32} /><p className="text-sm font-medium">Loading Dashboard...</p></div>;
+  if (isLoading) return <div className="flex flex-col items-center justify-center h-64 text-app-text-secondary"><Loader2 className="animate-spin mb-4 text-app-accent" size={32} /><p className="text-sm font-medium">Loading Dashboard...</p></div>;
 
   return (
     <div className="py-2 space-y-6 animate-in fade-in duration-500">
       {/* Skill & Reliability Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-gray-100 dark:border-zinc-800 shadow-sm flex flex-col items-center text-center transition-colors">
-          <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-3">
-            <ShieldCheck className="text-blue-600 dark:text-blue-400" size={20} />
+        <div className="bg-app-bg rounded-3xl p-5 border border-app-active shadow-sm flex flex-col items-center text-center transition-colors">
+          <div className="w-10 h-10 rounded-full bg-app-accent-bg flex items-center justify-center mb-3">
+            <ShieldCheck className="text-app-accent" size={20} />
           </div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Skill Level</p>
-          <p className="text-base font-bold text-gray-900 dark:text-white mt-0.5">{user?.verified_level || 'Pending'}</p>
+          <p className="text-[10px] font-black text-app-text-secondary uppercase tracking-widest">Skill Level</p>
+          <p className="text-base font-bold text-app-text-primary mt-0.5">{user?.verified_level || 'Pending'}</p>
         </div>
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 border border-gray-100 dark:border-zinc-800 shadow-sm flex flex-col items-center text-center transition-colors">
-          <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center mb-3">
-            <Star className="text-amber-500 dark:text-amber-400" size={20} />
+        <div className="bg-app-bg rounded-3xl p-5 border border-app-active shadow-sm flex flex-col items-center text-center transition-colors">
+          <div className="w-10 h-10 rounded-full bg-app-warning-bg flex items-center justify-center mb-3">
+            <Star className="text-app-warning" size={20} />
           </div>
-          <p className="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Reliability</p>
+          <p className="text-[10px] font-black text-app-text-secondary uppercase tracking-widest">Reliability</p>
           <div className="flex items-end justify-center gap-1 mt-0.5">
-            <span className="text-base font-bold text-gray-900 dark:text-white">{user?.reliability_score ? user.reliability_score.toFixed(1) : '5.0'}</span>
-            <span className="text-xs font-bold text-gray-400 dark:text-zinc-600 mb-[2px]">/5.0</span>
+            <span className="text-base font-bold text-app-text-primary">{user?.reliability_score ? user.reliability_score.toFixed(1) : '5.0'}</span>
+            <span className="text-xs font-bold text-app-text-secondary mb-[2px]">/5.0</span>
           </div>
         </div>
       </div>
@@ -152,38 +152,38 @@ export default function HomePage() {
       {/* Next Up Hero Card */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-            <Play size={12} className="text-blue-500" /> Next Up
+          <h2 className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest flex items-center gap-2">
+            <Play size={12} className="text-app-accent" /> Next Up
           </h2>
-          {nextGame && <Link href="/my-games" className="text-[11px] font-bold text-blue-600 dark:text-blue-400">See All</Link>}
+          {nextGame && <Link href="/my-games" className="text-[11px] font-bold text-app-accent">See All</Link>}
         </div>
         
         {nextGame ? (
-          <div onClick={() => setSelectedGame(nextGame)} className="bg-zinc-900 rounded-[32px] p-1 relative overflow-hidden shadow-lg shadow-zinc-200 dark:shadow-none active:scale-[0.99] transition-all cursor-pointer">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-            <div className="bg-zinc-800/50 rounded-[28px] p-5 backdrop-blur-xl border border-white/5">
+          <div onClick={() => setSelectedGame(nextGame)} className="bg-app-inverted rounded-[32px] p-1 relative overflow-hidden shadow-lg active:scale-[0.99] transition-all cursor-pointer">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-app-accent opacity-20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+            <div className="bg-app-bg/10 rounded-[28px] p-5 backdrop-blur-xl border border-app-bg/10">
               <div className="flex items-center justify-between mb-4">
-                <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-wider">Upcoming Match</span>
-                {nextGame.isHost && <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-wider">You're Hosting</span>}
+                <span className="px-3 py-1 rounded-full bg-app-accent-bg text-app-accent text-[10px] font-black uppercase tracking-wider">Upcoming Match</span>
+                {nextGame.isHost && <span className="px-3 py-1 rounded-full bg-app-success-bg text-app-success text-[10px] font-black uppercase tracking-wider">You're Hosting</span>}
               </div>
-              <h3 className="text-white font-black text-xl mb-3 pr-8 leading-tight">{nextGame.title}</h3>
-              <div className="flex items-center gap-4 text-sm text-gray-300 font-medium">
+              <h3 className="text-app-inverted-text font-black text-xl mb-3 pr-8 leading-tight">{nextGame.title}</h3>
+              <div className="flex items-center gap-4 text-sm text-app-inverted-text opacity-80 font-medium">
                 {/* STRICT UTC-TO-LOCAL CONVERSION APPLIED HERE */}
                 <div className="flex items-center gap-1.5">
-                  <Calendar size={14} className="text-blue-400" />
+                  <Calendar size={14} className="text-app-accent" />
                   {getLocalDate(nextGame, nextGame.date)}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Clock size={14} className="text-blue-400" />
+                  <Clock size={14} className="text-app-accent" />
                   {getLocalTime(nextGame, nextGame.time.split(' - ')[0])}
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-zinc-900 rounded-[32px] p-8 border border-dashed border-gray-200 dark:border-zinc-800 text-center transition-colors">
-            <p className="text-sm font-bold text-gray-800 dark:text-zinc-200">No upcoming matches</p>
-            <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Join a game below to fill your schedule.</p>
+          <div className="bg-app-bg rounded-[32px] p-8 border border-dashed border-app-active text-center transition-colors">
+            <p className="text-sm font-bold text-app-text-primary">No upcoming matches</p>
+            <p className="text-xs text-app-text-secondary mt-1">Join a game below to fill your schedule.</p>
           </div>
         )}
       </div>
@@ -192,8 +192,8 @@ export default function HomePage() {
       {featuredGames.length > 0 && (
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-[11px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Open Matches</h2>
-            <Link href="/browse" className="text-[11px] font-bold text-blue-600 dark:text-blue-400 flex items-center">
+            <h2 className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest">Open Matches</h2>
+            <Link href="/browse" className="text-[11px] font-bold text-app-accent flex items-center">
               Browse All <ChevronRight size={14} />
             </Link>
           </div>
