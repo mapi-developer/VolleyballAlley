@@ -138,11 +138,11 @@ export default function BrowsePage() {
         <div className="py-3 space-y-4 animate-in fade-in duration-500 pb-24">
             {/* Search Input bar */}
             <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" size={20} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-app-text-secondary" size={20} />
                 <input
                     type="text" 
                     placeholder="Search matches, locations, hosts..."
-                    className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-full py-3.5 pl-12 pr-4 text-[15px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                    className="w-full bg-app-inset border border-app-active rounded-full py-3.5 pl-12 pr-4 text-[15px] text-app-text-primary placeholder:text-app-text-secondary focus:outline-none focus:ring-2 focus:ring-app-accent transition-all shadow-sm"
                     value={searchQuery}
                     onFocus={() => setFooterVisible?.(false)} 
                     onBlur={() => setFooterVisible?.(true)}
@@ -158,8 +158,8 @@ export default function BrowsePage() {
                         onClick={() => setActiveFilter(f)} 
                         className={`whitespace-nowrap px-5 py-2 rounded-full text-sm font-semibold transition-all ${
                             activeFilter === f 
-                                ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-md' 
-                                : 'bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700'
+                                ? 'bg-app-accent text-white shadow-md' 
+                                : 'bg-app-inset text-app-text-secondary border border-app-active'
                         }`}
                     >
                         {f}
@@ -170,8 +170,8 @@ export default function BrowsePage() {
             {/* Card output matrix window */}
             <div className="space-y-4">
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-                        <Loader2 className="animate-spin mb-4 text-blue-500" size={32} />
+                    <div className="flex flex-col items-center justify-center py-16 text-app-text-secondary">
+                        <Loader2 className="animate-spin mb-4 text-app-accent" size={32} />
                         <p>Finding matches...</p>
                     </div>
                 ) : filteredGames.length > 0 ? (
@@ -179,12 +179,12 @@ export default function BrowsePage() {
                         <GameCard key={game.id} game={game} onClick={() => setSelectedGame(game)} />
                     ))
                 ) : (
-                    <div className="bg-white dark:bg-zinc-900 rounded-[32px] p-12 border border-dashed border-gray-200 dark:border-zinc-800 text-center transition-colors">
-                        <div className="w-16 h-16 bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Info className="text-gray-300 dark:text-zinc-700" size={32} />
+                    <div className="bg-app-bg rounded-[32px] p-12 border border-dashed border-app-active text-center transition-colors">
+                        <div className="w-16 h-16 bg-app-inset rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Info className="text-app-text-secondary" size={32} />
                         </div>
-                        <h3 className="text-gray-900 dark:text-white font-bold mb-1">No matches found</h3>
-                        <p className="text-gray-400 dark:text-zinc-500 text-xs font-medium">Try adjusting your filters or search keywords.</p>
+                        <h3 className="text-app-text-primary font-bold mb-1">No matches found</h3>
+                        <p className="text-app-text-secondary text-xs font-medium">Try adjusting your filters or search keywords.</p>
                     </div>
                 )}
             </div>
