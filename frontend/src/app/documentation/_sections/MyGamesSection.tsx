@@ -60,10 +60,14 @@ export function MyGamesSection({ subsection }: MyGamesSectionProps) {
           </div>
           
           <ul className="text-sm space-y-2 text-slate-600">
-            <li><strong>Upcoming Count:</strong> Tracks active reservations where `start_time `{'>'}` current_time`.</li>
-            <li><strong>Total Games Count:</strong> Historical tally of events where the user's attendance status is verified.</li>
-            <li><strong>Hours Played:</strong> Aggregated calculation computed as: `(end_time - start_time)` multiplied by confirmed appearances.</li>
+            <li><strong>Upcoming Count:</strong> Tracks active reservations where `start_time + 2h` {'>'}` current_time`.</li>
+            <li><strong>Total Games Count:</strong> Sum of upcoming games plus past games (all games from the <code>GET /api/v1/users/me/games</code> endpoint).</li>
+            <li><strong>Hours Played:</strong> Aggregated calculation computed as: `(end_time - start_time)` summed across all past games.</li>
           </ul>
+
+          <InfoCallout type="info" title="Interactive Navigation">
+            Each stat card is a clickable button that switches the visible section below. The active card displays a highlighted accent border. The page defaults to the <strong>Upcoming</strong> section on load.
+          </InfoCallout>
         </section>
 
         {/* SUBTOPIC ANCHOR: Timeline Schedule Filter */}
@@ -76,8 +80,9 @@ export function MyGamesSection({ subsection }: MyGamesSectionProps) {
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 my-4">
             <h4 className="font-bold text-slate-800 m-0 mb-2">Toggle-State Routing Behaviors:</h4>
             <ul className="text-sm space-y-2 mb-0">
-              <li><strong>Current Mode:</strong> Defaults the viewport header title to <code>"Upcoming Schedule"</code>, listing pending games. Clicking any item launches the interactive <code>EventDetailsSheet</code> modal drawer.</li>
-              <li><strong>History Mode:</strong> Alters the frame header to <code>"Match History"</code>, rendering archived cards from previous dates.</li>
+              <li><strong>Upcoming Schedule (default):</strong> Lists pending games sorted <strong>older-first</strong> (ascending by date). Clicking any item launches the interactive <code>EventDetailsSheet</code> modal drawer.</li>
+              <li><strong>Games History:</strong> Renders archived cards from past events, also sorted <strong>older-first</strong> (ascending by date).</li>
+              <li><strong>Player Statistics:</strong> Displays a 2-column grid with <strong>Total Games</strong> (upcoming + past) and <strong>Hours Played</strong> (aggregated duration of past events).</li>
             </ul>
           </div>
 
@@ -91,29 +96,28 @@ export function MyGamesSection({ subsection }: MyGamesSectionProps) {
   if (subsection === 'stats') {
     return (
       <div className="animate-in fade-in duration-300">
-        <h1>Analytics Aggregation (Backend Implementation)</h1>
-        <p>Telemetry stats do not rely on local device storage parameters. They compile dynamically via complex calculations running on database schemas.</p>
+        <h1>Analytics Aggregation (Client-Side Computation)</h1>
+        <p>Telemetry stats are computed entirely client-side from the <code>GET /api/v1/users/me/games</code> endpoint. No separate stats endpoint is required.</p>
 
-        <h2>Database Aggregation Functions</h2>
-        <p>The backend routes leverage aggregate selection operations to output synchronized properties via the <code>GET /api/v1/users/me/stats</code> endpoint query pattern:</p>
+        <h2>Client-Side Calculation</h2>
+        <p>All three stat values derive from the same games list:</p>
 
-        <pre><code>{`# Conceptual analytical parsing workflow inside users.py
-@router.get("/me/stats")
-async def get_my_stats(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    # 1. Gather historical match data bounds
-    attended_rsvps = session.exec(
-        select(RSVP).where(RSVP.user_id == current_user.id, RSVP.attended == True)
-    ).all()
-    
-    # 2. Extract calculations
-    total_games = len(attended_rsvps)
-    total_hours = sum([(r.event.end_time - r.event.start_time).total_seconds() / 3600 for r in attended_rsvps])
-    
-    return {
-        "upcoming_count": len(upcoming_games),
-        "total_games": total_games,
-        "hours_played": round(total_hours, 1)
-    }`}</code></pre>
+        <ul className="text-sm space-y-2 text-slate-600 my-4">
+          <li><strong>Upcoming Count:</strong> Games where <code>start_time + 2h &gt; now</code></li>
+          <li><strong>Total Games:</strong> <code>upcomingGames.length + pastGames.length</code></li>
+          <li><strong>Hours Played:</strong> Sum of <code>durationHours</code> for all past games</li>
+        </ul>
+
+        <h2>Game Classification</h2>
+        <p>Games are split into upcoming vs past using a 2-hour grace window after the event start:</p>
+
+        <pre><code>{`const now = Date.now();
+const upcoming = games.filter(g =>
+  new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) > now
+);
+const past = games.filter(g =>
+  new Date(g.rawDate).getTime() + (2 * 60 * 60 * 1000) <= now
+);`}</code></pre>
       </div>
     );
   }
