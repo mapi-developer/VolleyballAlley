@@ -107,8 +107,8 @@ export default function ProfilePage() {
   const menuItems = [
     { id: 'notifications', label: 'Notification Settings', icon: Bell, color: 'text-app-accent' },
     { id: 'preferences', label: 'App Preferences', icon: Settings, color: 'text-app-text-secondary' },
-    { id: 'support', label: 'Support & Review', icon: MessageSquarePlus, color: 'text-amber-500' },
-    { id: 'about', label: 'Credentials & About', icon: Info, color: 'text-emerald-500' },
+    { id: 'support', label: 'Support & Review', icon: MessageSquarePlus, color: 'text-app-warning' },
+    { id: 'about', label: 'Credentials & About', icon: Info, color: 'text-app-success' },
   ];
 
   const ToggleRow = ({ label, description, active, onClick }: any) => (
@@ -160,7 +160,7 @@ export default function ProfilePage() {
             <p className="font-bold text-app-text-primary">{level}</p>
           </div>
           <div className="bg-app-inset rounded-2xl p-4 border border-app-active text-center transition-colors">
-            <div className="flex items-center justify-center text-amber-500 mb-1">
+            <div className="flex items-center justify-center text-app-warning mb-1">
               <Star size={16} className="mr-1.5 fill-current" />
               <span className="text-[10px] uppercase font-black opacity-50">Behavior</span>
             </div>
@@ -290,7 +290,7 @@ export default function ProfilePage() {
               onClick={handleSendSupport}
               className={`w-full py-4 rounded-2xl font-black text-base shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
                 isSuccess 
-                  ? 'bg-emerald-500 text-white' 
+                  ? 'bg-app-success text-white' 
                   : 'bg-app-accent text-white disabled:opacity-50'
               }`}
             >
