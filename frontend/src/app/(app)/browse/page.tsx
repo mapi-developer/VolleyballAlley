@@ -6,6 +6,7 @@ import GameCard, { Game } from '@/components/EventCard';
 import EventDetailsSheet from '@/components/EventDetailsSheet';
 import { useUser } from '@/context/UserContext';
 import { api } from '@/lib/api';
+import { canUserPlayGame } from '@/lib/level';
 
 // Matches backend PlayLevel enums exactly (All, Beginner, Intermediate, Advanced)
 const FILTERS = ["All", "Indoor", "Outdoor", "Beginner", "Intermediate", "Advanced"];
@@ -99,15 +100,18 @@ export default function BrowsePage() {
     const filteredGames = useMemo(() => {
         return liveGames.filter(game => {
             // Checks both backend enum types (Indoor/Outdoor and Beginner/Intermediate/Advanced)
-            const matchesFilter = activeFilter === "All" || 
-                                 game.type === activeFilter || 
+            const matchesFilter = activeFilter === "All" ||
+                                 game.type === activeFilter ||
                                  game.level.toLowerCase() === activeFilter.toLowerCase();
+
+            // Only show games the user's verified level qualifies for
+            const matchesLevel = canUserPlayGame(user?.verified_level ?? '', game.level);
                                  
             const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                  game.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                  game.hostName.toLowerCase().includes(searchQuery.toLowerCase());
                                  
-            return matchesFilter && matchesSearch;
+            return matchesFilter && matchesSearch && matchesLevel;
         });
     }, [searchQuery, activeFilter, liveGames]);
 

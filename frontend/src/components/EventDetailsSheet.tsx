@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Calendar, Clock, Banknote, Users, Info, MapPin, Map as MapIcon, ExternalLink, Shield, XCircle, Loader2, MessageCircle, AlignLeft } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
+import { canUserPlayGame } from '@/lib/level';
 import BottomSheet from '@/components/BottomSheet';
 import { Game } from '@/components/EventCard'; 
 
@@ -47,8 +49,14 @@ const getLocalTime = (game: Game, fallback: string) => {
 };
 
 export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCancelRsvp, isCancelling = false }: EventDetailsSheetProps) {
-  
+
+  const { user } = useUser();
   const isFull = game ? game.currentPlayers >= game.maxPlayers : false;
+
+  // Check whether the user's verified level meets the game's requirement
+  const canPlay = game && user?.verified_level
+    ? canUserPlayGame(user.verified_level, game.level)
+    : true;
   // Use parseBackendDate for the cancellation lock to ensure accuracy
   const gameStartTime = game ? parseBackendDate(game.start_time || game.rawDate)?.getTime() || 0 : 0;
   const isCancellable = gameStartTime > 0 ? (gameStartTime - Date.now()) > (2 * 60 * 60 * 1000) : false;
@@ -162,6 +170,10 @@ export default function EventDetailsSheet({ isOpen, onClose, game, onRsvp, onCan
                     </p>
                   </div>
                )
+            ) : !canPlay ? (
+              <button disabled className="w-full py-4 rounded-2xl font-black text-base shadow-xl bg-app-inset text-app-text-secondary opacity-60 cursor-not-allowed transition-colors">
+                Your level of play is not enough
+              </button>
             ) : (
               <button onClick={() => onRsvp?.(game.id)} className={`w-full py-4 rounded-2xl font-black text-base shadow-xl active:scale-95 transition-all ${isFull ? 'bg-app-warning text-white' : 'bg-app-accent text-white'}`}>
                 {isFull ? 'Join Waitlist' : 'RSVP Now'}

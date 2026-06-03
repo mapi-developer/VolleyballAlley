@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from "@/context/UserContext";
 import { ShieldCheck, Star, Play, ChevronRight, Calendar, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { canUserPlayGame } from '@/lib/level';
 import GameCard, { Game } from '@/components/EventCard';
 import EventDetailsSheet from '@/components/EventDetailsSheet';
 import { api } from '@/lib/api';
@@ -89,7 +90,7 @@ export default function HomePage() {
       // Filter and Sort Upcoming Games using the safe helper
       const upcoming = myGamesData.map(mapGame).filter((g: Game) => {
         const time = getGameTime(g);
-        return time > 0 && (time + (2 * 60 * 60 * 1000)) > now;
+        return time > 0 && (time + (2 * 60 * 60 * 1000)) > now && canUserPlayGame(user?.verified_level ?? '', g.level);
       });
       upcoming.sort((a: Game, b: Game) => getGameTime(a) - getGameTime(b));
       setNextGame(upcoming.length > 0 ? upcoming[0] : null);
@@ -98,7 +99,7 @@ export default function HomePage() {
       const openFeatured = allEventsData.map(mapGame)
         .filter((g: Game) => {
           const time = getGameTime(g);
-          return time > 0 && time > now && !g.isJoined;
+          return time > 0 && time > now && !g.isJoined && canUserPlayGame(user?.verified_level ?? '', g.level);
         })
         .sort((a: Game, b: Game) => getGameTime(a) - getGameTime(b))
         .slice(0, 3);
