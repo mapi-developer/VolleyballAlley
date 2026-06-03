@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Calendar, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Calendar, Loader2, Search, MapPin, User, Clock } from 'lucide-react';
 import GameCard, { Game } from '@/components/EventCard';
 import EventDetailsSheet from '@/components/EventDetailsSheet';
 import { useUser } from '@/context/UserContext';
@@ -72,6 +72,7 @@ export default function MyGamesPage() {
       setIsLoading(false);
     }
   };
+
 
   useEffect(() => { fetchMyGames(); }, [user]);
 

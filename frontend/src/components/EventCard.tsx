@@ -32,6 +32,8 @@ interface GameCardProps {
     onEditClick?: (e: React.MouseEvent) => void;
     onRsvpClick?: () => void;
     onCancelClick?: () => void;
+    onJoin?: () => void;
+    isJoining?: boolean;
 }
 
 // BULLETPROOF HELPERS
@@ -69,7 +71,7 @@ const getLocalTime = (game: Game, fallback: string) => {
     return endTime ? `${startTime} - ${endTime}` : startTime;
 };
 
-export default function EventCard({ game, variant = 'detailed', onClick }: GameCardProps) {
+export default function EventCard({ game, variant = 'detailed', onClick, onJoin, isJoining }: GameCardProps) {
     const isFull = game.currentPlayers >= game.maxPlayers;
     const fillPercentage = Math.min((game.currentPlayers / game.maxPlayers) * 100, 100);
 
@@ -148,7 +150,20 @@ export default function EventCard({ game, variant = 'detailed', onClick }: GameC
             {variant === 'detailed' && (
                 <div className="mt-4 pt-3 border-t border-dashed border-app-active flex justify-between items-center transition-colors">
                     <span className="text-sm font-black text-app-text-primary transition-colors">{game.price}</span>
-                    <span className="text-xs font-bold text-app-link transition-colors">View Details →</span>
+                    {onJoin ? (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onJoin();
+                            }}
+                            disabled={isJoining || isFull}
+                            className="px-4 py-2 bg-app-accent text-white text-xs font-black uppercase tracking-widest rounded-full active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isJoining ? 'Joining...' : 'Join'}
+                        </button>
+                    ) : (
+                        <span className="text-xs font-bold text-app-link transition-colors">View Details →</span>
+                    )}
                 </div>
             )}
         </div>
