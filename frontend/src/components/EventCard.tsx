@@ -54,9 +54,19 @@ const getLocalDate = (game: Game, fallback: string) => {
 };
 
 const getLocalTime = (game: Game, fallback: string) => {
-    const dateObj = parseBackendDate(game.start_time || game.rawDate);
-    if (!dateObj) return fallback;
-    return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    const startObj = parseBackendDate(game.start_time || game.rawDate);
+    if (!startObj) return fallback;
+    const startTime = startObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    // Append end time if available
+    let endTime = '';
+    if (game.end_time) {
+        const endObj = parseBackendDate(game.end_time);
+        if (endObj) {
+            endTime = endObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+    }
+    return endTime ? `${startTime} - ${endTime}` : startTime;
 };
 
 export default function EventCard({ game, variant = 'detailed', onClick }: GameCardProps) {

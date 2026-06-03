@@ -51,6 +51,7 @@ export default function MyGamesPage() {
           isJoined: !!userRegistration,
           isHost: dbEvent.host_id === user.id,
           rsvpStatus: userRegistration ? userRegistration.status : null,
+          end_time: dbEvent.end_time,
           durationHours
         };
       });

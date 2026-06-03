@@ -31,7 +31,8 @@ const mapBackendToHostEvent = (dbEvent: any): Game & { attendees: any[], waitlis
     maxPlayers: dbEvent.max_players,
     price: dbEvent.price === 0 ? "Free" : `${dbEvent.price} HUF`,
     hostName: "You", isJoined: true, isHost: true, revolutTag: dbEvent.revolut_tag,
-    attendees: confirmed, 
+    end_time: dbEvent.end_time,
+    attendees: confirmed,
     waitlist: attendees.filter((a: any) => a.status === 'waitlisted')
   };
 };
