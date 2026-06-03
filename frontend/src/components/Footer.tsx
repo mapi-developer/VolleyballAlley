@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, CalendarDays, PlusCircle, UserCircle2 } from 'lucide-react';
+import { Home, Search, CalendarDays, PlusCircle, UserCircle2, Wrench } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 
 const Footer = () => {
@@ -11,12 +11,13 @@ const Footer = () => {
   
   const isOrganizer = role === 'organizer' || role === 'admin';
   
-  const navItems = [ 
-    { label: 'Home', icon: Home, href: '/' }, 
-    { label: 'Browse', icon: Search, href: '/browse' }, 
-    { label: 'My Games', icon: CalendarDays, href: '/my-games' }, 
-    ...(isOrganizer ? [{ label: 'Host', icon: PlusCircle, href: '/host' }] : []), 
-    { label: 'Profile', icon: UserCircle2, href: '/profile' }, 
+  const navItems = [
+    { label: 'Home', icon: Home, href: '/' },
+    { label: 'Browse', icon: Search, href: '/browse' },
+    { label: 'My Games', icon: CalendarDays, href: '/my-games' },
+    ...(isOrganizer ? [{ label: 'Host', icon: PlusCircle, href: '/host' }] : []),
+    { label: 'Tools', icon: Wrench, href: '/game-tools' },
+    { label: 'Profile', icon: UserCircle2, href: '/profile' },
   ];
 
   return (

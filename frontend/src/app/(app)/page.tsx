@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUser } from "@/context/UserContext";
-import { ShieldCheck, Star, Play, ChevronRight, Calendar, Clock, Loader2 } from "lucide-react";
+import { Play, ChevronRight, Calendar, Clock, Loader2, Wrench } from "lucide-react";
 import Link from "next/link";
 import { canUserPlayGame } from '@/lib/level';
 import GameCard, { Game } from '@/components/EventCard';
@@ -134,26 +134,21 @@ export default function HomePage() {
 
   return (
     <div className="py-2 space-y-6 animate-in fade-in duration-500">
-      {/* Skill & Reliability Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-app-bg rounded-3xl p-5 border border-app-active shadow-sm flex flex-col items-center text-center transition-colors">
-          <div className="w-10 h-10 rounded-full bg-app-accent-bg flex items-center justify-center mb-3">
-            <ShieldCheck className="text-app-accent" size={20} />
-          </div>
-          <p className="text-[10px] font-black text-app-text-secondary uppercase tracking-widest">Skill Level</p>
-          <p className="text-base font-bold text-app-text-primary mt-0.5">{user?.verified_level || 'Pending'}</p>
-        </div>
-        <div className="bg-app-bg rounded-3xl p-5 border border-app-active shadow-sm flex flex-col items-center text-center transition-colors">
-          <div className="w-10 h-10 rounded-full bg-app-warning-bg flex items-center justify-center mb-3">
-            <Star className="text-app-warning" size={20} />
-          </div>
-          <p className="text-[10px] font-black text-app-text-secondary uppercase tracking-widest">Reliability</p>
-          <div className="flex items-end justify-center gap-1 mt-0.5">
-            <span className="text-base font-bold text-app-text-primary">{user?.reliability_score ? user.reliability_score.toFixed(1) : '5.0'}</span>
-            <span className="text-xs font-bold text-app-text-secondary mb-[2px]">/5.0</span>
+      {/* Game Tools Card */}
+      <Link href="/game-tools">
+        <div className="bg-app-card rounded-3xl p-5 border border-app-active shadow-sm active:scale-[0.98] transition-all cursor-pointer">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-app-accent-bg flex items-center justify-center flex-shrink-0">
+              <Wrench className="text-app-accent" size={24} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-app-text-primary text-base">Game Tools</h3>
+              <p className="text-xs text-app-text-secondary mt-0.5">Shuffle teams, track scores, warm-up helpers</p>
+            </div>
+            <ChevronRight size={20} className="text-app-text-secondary flex-shrink-0" />
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Next Up Hero Card */}
       <div className="space-y-3">
