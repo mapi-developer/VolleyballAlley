@@ -90,7 +90,9 @@ export default function HomePage() {
       // Filter and Sort Upcoming Games using the safe helper
       const upcoming = myGamesData.map(mapGame).filter((g: Game) => {
         const time = getGameTime(g);
-        return time > 0 && (time + (2 * 60 * 60 * 1000)) > now && canUserPlayGame(user?.verified_level ?? '', g.level);
+        const alreadyInvolved = g.isHost || g.isJoined;
+        const levelOk = alreadyInvolved || canUserPlayGame(user?.verified_level ?? '', g.level);
+        return time > 0 && (time + (2 * 60 * 60 * 1000)) > now && levelOk;
       });
       upcoming.sort((a: Game, b: Game) => getGameTime(a) - getGameTime(b));
       setNextGame(upcoming.length > 0 ? upcoming[0] : null);
@@ -99,7 +101,10 @@ export default function HomePage() {
       const openFeatured = allEventsData.map(mapGame)
         .filter((g: Game) => {
           const time = getGameTime(g);
-          return time > 0 && time > now && !g.isJoined && canUserPlayGame(user?.verified_level ?? '', g.level);
+          const isHost = g.isHost;
+          const alreadyJoined = g.isJoined;
+          const levelOk = isHost || canUserPlayGame(user?.verified_level ?? '', g.level);
+          return time > 0 && time > now && !alreadyJoined && levelOk;
         })
         .sort((a: Game, b: Game) => getGameTime(a) - getGameTime(b))
         .slice(0, 3);

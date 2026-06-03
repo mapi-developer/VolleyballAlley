@@ -104,8 +104,8 @@ export default function BrowsePage() {
                                  game.type === activeFilter ||
                                  game.level.toLowerCase() === activeFilter.toLowerCase();
 
-            // Only show games the user's verified level qualifies for
-            const matchesLevel = canUserPlayGame(user?.verified_level ?? '', game.level);
+            // Only show games the user's verified level qualifies for, unless they're hosting or already joined
+            const matchesLevel = game.isHost || game.isJoined || canUserPlayGame(user?.verified_level ?? '', game.level);
                                  
             const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                  game.location.toLowerCase().includes(searchQuery.toLowerCase()) ||

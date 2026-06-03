@@ -23,6 +23,7 @@ export function levelRank(level: string): number {
  *   - user's verified level must be >= game's required level
  */
 export function canUserPlayGame(userLevel: string, gameLevel: string): boolean {
-  if (!userLevel || gameLevel === 'All') return false;
+  if (gameLevel === 'All') return true;
+  if (!userLevel) return true;
   return levelRank(userLevel) >= levelRank(gameLevel);
 }
