@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Users, ChevronRight, RefreshCw, Trash2, Trophy, Play, Dumbbell } from 'lucide-react';
+import { Users, RefreshCw, Trash2, Trophy, Play, Dumbbell, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useUser } from '@/context/UserContext';
 
@@ -508,25 +507,48 @@ function WarmupHelper() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+type Tab = 'shuffle' | 'counter' | 'warmup';
+
+const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
+  { key: 'shuffle', label: 'Shuffle', icon: <Users size={18} /> },
+  { key: 'counter', label: 'Counter', icon: <Trophy size={18} /> },
+  { key: 'warmup', label: 'Warm-up', icon: <Dumbbell size={18} /> },
+];
+
 export default function GameToolsPage() {
+  const [activeTab, setActiveTab] = useState<Tab>('shuffle');
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/" className="p-2 -ml-2 active:scale-95 transition-all">
-          <ArrowLeft size={24} className="text-app-text-secondary" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-black text-app-text-primary">Game Tools</h1>
-          <p className="text-xs text-app-text-secondary">Everything you need on the court</p>
-        </div>
+      {/* Title */}
+      <div className="text-center">
+        <h1 className="text-xl font-black text-app-text-primary">Game Tools</h1>
+        <p className="text-xs text-app-text-secondary mt-0.5">Everything you need on the court</p>
       </div>
 
-      {/* Tools */}
-      <div className="space-y-4">
-        <PlayerShuffle />
-        <ScoreCounter />
-        <WarmupHelper />
+      {/* Tab bar */}
+      <div className="flex bg-app-bg rounded-2xl p-1.5 border border-app-active">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              activeTab === tab.key
+                ? 'bg-app-accent text-white shadow-sm'
+                : 'text-app-text-secondary hover:text-app-text-primary'
+            }`}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Active tool */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {activeTab === 'shuffle' && <PlayerShuffle />}
+        {activeTab === 'counter' && <ScoreCounter />}
+        {activeTab === 'warmup' && <WarmupHelper />}
       </div>
     </div>
   );

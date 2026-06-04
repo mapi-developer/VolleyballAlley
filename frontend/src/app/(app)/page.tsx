@@ -136,7 +136,7 @@ export default function HomePage() {
     <div className="py-2 space-y-6 animate-in fade-in duration-500">
       {/* Game Tools Card */}
       <Link href="/game-tools">
-        <div className="bg-app-card rounded-3xl p-5 border border-app-active shadow-sm active:scale-[0.98] transition-all cursor-pointer">
+        <div className="bg-app-card rounded-3xl p-5 border border-app-active shadow-sm active:scale-[0.98] transition-all cursor-pointer mb-2">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-app-accent-bg flex items-center justify-center flex-shrink-0">
               <Wrench className="text-app-accent" size={24} />
