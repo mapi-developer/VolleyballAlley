@@ -30,7 +30,7 @@ class User(SQLModel, table=True):
     last_name: Optional[str] = None
     photo_url: Optional[str] = None
     role: UserRole = Field(default=UserRole.MEMBER)
-    verified_level: PlayLevel = Field(default=PlayLevel.BEGINNER)
+    verified_level: PlayLevel = Field(default=PlayLevel.ADVANCED)
     reliability_score: float = Field(default=5.0)
     last_evaluation_at: Optional[datetime] = None
     
