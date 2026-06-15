@@ -207,6 +207,7 @@ export default function ProfilePage() {
 
         {activeView === 'preferences' && (
           <div className="space-y-6 pb-6">
+            {/*
             <div>
               <p className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest mb-3 px-1">
                 Role Management (Live Sync)
@@ -231,6 +232,7 @@ export default function ProfilePage() {
                 })}
               </div>
             </div>
+            */}
 
             <div className="pt-6 border-t border-app-active">
               <p className="text-[11px] font-black text-app-text-secondary uppercase tracking-widest mb-3 px-1">

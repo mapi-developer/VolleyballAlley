@@ -522,7 +522,7 @@ export default function GameToolsPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Title */}
       <div className="text-center">
-        <h1 className="text-xl font-black text-app-text-primary">Game Tools</h1>
+        <div className="hidden">Game Tools</div>
         <p className="text-xs text-app-text-secondary mt-0.5">Everything you need on the court</p>
       </div>
 

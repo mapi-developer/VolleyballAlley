@@ -56,6 +56,7 @@ const Header = () => {
       case '/my-games': return 'My Games';
       case '/host': return 'Host';
       case '/profile': return 'Profile';
+      case '/game-tools': return 'Tools';
       default: return 'VolleyballAlley';
     }
   };
