@@ -145,7 +145,7 @@ async def update_event(
     old_location = db_event.location_name
 
     # 2. Check 24h Lock
-    if (old_start_time - datetime.now(timezone.utc)) < timedelta(hours=24):
+    if old_start_time != event_update.start_time and (old_start_time - event_update.start_time) < timedelta(hours=24):
         raise HTTPException(status_code=400, detail="Logistics locked 24h before start.")
 
     # 3. Apply updates
