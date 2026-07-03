@@ -51,24 +51,24 @@ Installation & Setup
 
 📁 Project Structure
 
-VolleyballAlley/
-│
-├── frontend/                # Next.js application
-│   ├── components/          # Reusable React components
-│   ├── pages/               # Next.js routing
-│   └── public/              # Static assets
-│
-├── backend/                 # FastAPI application
-│   ├── app/                 # Main application code
-│   │   ├── api/             # API routing and endpoints
-│   │   ├── core/            # Configuration and security
-│   │   ├── models/          # SQLAlchemy database models
-│   │   └── schemas/         # Pydantic validation schemas
-│   ├── Dockerfile           # Backend container definition
-│   └── requirements.txt     # Python dependencies
-│
-├── docker-compose.yml       # Multi-container orchestration
-└── README.md                # Project documentation
+VolleyballAlley/\
+│\
+├── frontend/                # Next.js application\
+│   ├── components/          # Reusable React components\
+│   ├── pages/               # Next.js routing\
+│   └── public/              # Static assets\
+│\
+├── backend/                 # FastAPI application\
+│   ├── app/                 # Main application code\
+│   │   ├── api/             # API routing and endpoints\
+│   │   ├── core/            # Configuration and security\
+│   │   ├── models/          # SQLAlchemy database models\
+│   │   └── schemas/         # Pydantic validation schemas\
+│   ├── Dockerfile           # Backend container definition\
+│   └── requirements.txt     # Python dependencies\
+│\
+├── docker-compose.yml       # Multi-container orchestration\
+└── README.md                # Project documentation\
 
 🤝 Contributing
 Contributions are welcome! If you'd like to improve the platform, please fork the repository and submit a pull request.
